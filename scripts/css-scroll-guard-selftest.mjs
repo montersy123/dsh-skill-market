@@ -57,6 +57,21 @@ const plants = [
     from: 'display: flex; flex-direction: column;\n}\n[data-skill-market] .sm-inspector.open',
     to: 'display: flex; flex-direction: row;\n}\n[data-skill-market] .sm-inspector.open',
   },
+  {
+    name: 'a panel that sizes against its mount instead of the viewport',
+    from: 'height: 100vh; height: 100dvh; max-height: 100%; min-height: 0; flex: 1 1 auto;',
+    to: 'height: 100%; max-height: 100%; min-height: 0; flex: 1 1 auto;',
+  },
+  {
+    name: 'a panel with no dvh override',
+    from: 'height: 100vh; height: 100dvh; max-height: 100%; min-height: 0; flex: 1 1 auto;',
+    to: 'height: 100vh; max-height: 100%; min-height: 0; flex: 1 1 auto;',
+  },
+  {
+    name: 'a panel with no scroll backstop',
+    from: 'position: relative; overflow: hidden; overflow-y: auto;',
+    to: 'position: relative; overflow: hidden;',
+  },
 ]
 
 let failures = 0

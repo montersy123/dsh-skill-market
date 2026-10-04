@@ -17,6 +17,11 @@ import { join } from 'node:path'
 const outDir = process.argv[2] ?? join(import.meta.dirname, 'scroll-lab')
 // `--original` restores the rule that was removed, so the two states can be measured side by side rather than argued about.
 const useOriginal = process.argv.includes('--original')
+// The shell variant matters. With `height: 100vh` the mount is definite whatever its ancestors do; with
+// `height: 100%` it is definite only if every ancestor is, and a percentage that cannot resolve becomes `auto` —
+// which is the difference between a panel that scrolls and one that grows and is clipped.
+const shellIndex = process.argv.indexOf('--shell')
+const shell = shellIndex >= 0 ? process.argv[shellIndex + 1] : 'vh'
 mkdirSync(outDir, { recursive: true })
 
 // Extract the stylesheet exactly as the runtime receives it, comments stripped the same way the guard strips them.
@@ -50,13 +55,21 @@ const html = `<!doctype html>
   <link rel="stylesheet" href="panel.css">
   <style>
     /* Stand in for the harness shell. The real one gives the panel a definite height; this reproduces that so the
-       measurement is about the panel, not about a deliberately broken parent. */
+       measurement is about the panel, not about a deliberately broken parent.
+
+       "--shell pct" swaps the viewport unit for a percentage chain, which is what a host is more likely to use and
+       which only resolves if every ancestor has a definite height. "--shell auto" removes the height entirely, the
+       worst case: the panel is sized by its content and its own overflow:hidden then clips it.
+       No backticks in this block: it lives inside a template literal. */
     html, body { margin: 0; height: 100%; }
-    #mount { height: 100vh; display: flex; flex-direction: column; min-height: 0; }
+    /* flex: 1 on the shell so the percentage height of #mount can resolve against the viewport-sized body. */
+    #shell { ${shell === 'auto' ? 'flex: 1 1 auto;' : 'height: 100%;'} display: flex; flex-direction: column; min-height: 0; }
+    #mount { ${shell === 'auto' ? 'height: auto; flex: 1 1 auto;' : shell === 'pct' ? 'height: 100%;' : 'height: 100vh;'} display: flex; flex-direction: column; min-height: 0; }
     #mount > [data-skill-market] { flex: 1 1 auto; min-height: 0; }
   </style>
 </head>
 <body>
+  <div id="shell">
   <div id="mount">
     <div data-skill-market="" data-skill-market-panel="skill-market">
       <header class="sm-topbar"></header>
@@ -82,6 +95,7 @@ const html = `<!doctype html>
         </div>
       </aside>
     </div>
+  </div>
   </div>
   <script>
     // Measure what actually resolved, then write it into the DOM for --dump-dom to return.

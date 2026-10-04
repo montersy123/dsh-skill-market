@@ -31,6 +31,8 @@ if (existsSync(CHROME) === false) {
 const scratch = mkdtempSync(join(tmpdir(), 'scroll-lab-'))
 const buildArgs = [join(import.meta.dirname, 'build-scroll-lab.mjs'), scratch]
 if (argv.includes('--original')) buildArgs.push('--original')
+const shell = flag('--shell', undefined)
+if (shell !== undefined) buildArgs.push('--shell', shell)
 execFileSync(process.execPath, buildArgs, { stdio: 'inherit' })
 
 const url = `file:///${join(scratch, 'index.html').replace(/\\/g, '/')}`

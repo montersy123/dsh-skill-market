@@ -60,15 +60,20 @@ const all = rules()
 if (all.length === 0 && failures.length === 0) failures.push('no CSS rules were parsed')
 
 // ── the drawer's own subtree, by class name ──
-// Any selector mentioning one of these is part of the drawer, so its declarations are in scope.
+// Any selector mentioning one of these is inside the panel, so its declarations are in scope. The panel's own rule
+// is excluded: the panel legitimately takes its height from the viewport, and it is the thing the drawer lives in.
 const DRAWER = /\.sm-(inspector|insp-head|insp-body|insp-meta|insp-pub|insp-actions|tabs|tab|tree|preview|versions|perm|stat-strip|md)\b/
+/** Whether a selector targets the drawer rather than the panel that contains it. */
+const inDrawer = (selector) => DRAWER.test(selector) && /^\[data-skill-market\]$/.test(selector.trim()) === false
 
 const VIEWPORT_UNIT = /(?:^|[\s:(,])\d*\.?\d+(?:vh|vw|vmin|vmax|dvh|svh|lvh|dvw)\b/
 
 for (const { selector, body } of all) {
-  if (DRAWER.test(selector) === false) continue
+  if (inDrawer(selector) === false) continue
 
-  // 1. no viewport-relative sizing anywhere in the drawer
+  // 1. no viewport-relative sizing inside the drawer. The panel takes its height from the viewport on purpose —
+  //    a percentage of an indefinite mount is what squeezed this drawer's body to 40px — but nothing below the
+  //    panel may, because the drawer is only as tall as the panel and 60vh there is unrelated to its own space.
   for (const declaration of body.split(';')) {
     const [property, value = ''] = declaration.split(':')
     if (property === undefined || value === '') continue
@@ -97,6 +102,32 @@ for (const { selector, body } of all) {
 }
 
 // ── the contract itself must still be declared ──
+// The panel takes its height from the viewport, not from its mount. Measured: with `height: 100%` against an
+// indefinite mount the panel came out at 178px — shorter than its own 224px header — and the body below it was
+// squeezed to 40px, which reads as "cannot scroll". Both unit spellings must be present so an engine without dvh
+// still gets a definite height from the vh line above it.
+// There are two rules whose selector is exactly `[data-skill-market]`: the first declares the token table, the
+// second the layout. Picking the first by selector alone silently asserted against a block of CSS variables, so the
+// layout rule is found by a declaration only it carries.
+const panel = all.find((rule) => rule.selector === '[data-skill-market]' && /flex-direction:\s*column/.test(rule.body))
+if (panel === undefined) {
+  failures.push('[data-skill-market] has no layout rule, so the panel has no height contract at all')
+} else {
+  if (/height:\s*100(vh|dvh)/.test(panel.body) === false) {
+    failures.push('the panel must take its height from the viewport (height: 100vh with a 100dvh override) — a percentage resolves to auto against a content-sized mount, which squeezes the drawer body to an unusable height')
+  }
+  if (/height:\s*100dvh/.test(panel.body) === false) {
+    failures.push('the panel should override 100vh with 100dvh, so a collapsing mobile toolbar cannot clip it')
+  }
+  if (/min-height:\s*0/.test(panel.body) === false) {
+    failures.push('the panel must keep min-height: 0, or it will refuse to shrink inside a flex mount')
+  }
+  if (/overflow-y:\s*auto/.test(panel.body) === false) {
+    failures.push('the panel should keep overflow-y: auto as a backstop, so a mount shorter than the viewport scrolls instead of clipping the panel contents')
+  }
+}
+
+// ── the drawer's scroll region ──
 const body = all.find((rule) => rule.selector === '[data-skill-market] .sm-insp-body')
 if (body === undefined) {
   failures.push('.sm-insp-body has no rule — the drawer has no scroll region at all')
@@ -132,8 +163,8 @@ if (head === undefined) {
   failures.push('.sm-insp-head must declare "flex: 0 0 auto" — otherwise a short drawer shrinks the header instead of scrolling the body, and the header clips its own contents')
 }
 
-const drawerRules = all.filter((rule) => DRAWER.test(rule.selector))
-console.log(`  ${String(all.length)} CSS rules parsed; ${String(drawerRules.length)} in the drawer subtree`)
+const drawerRules = all.filter((rule) => inDrawer(rule.selector))
+console.log(`  ${String(all.length)} CSS rules parsed; ${String(drawerRules.length)} inside the drawer`)
 console.log('')
 for (const note of notes) console.log(`  note  ${note}`)
 if (notes.length > 0) console.log('')
