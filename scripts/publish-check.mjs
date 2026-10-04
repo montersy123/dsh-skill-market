@@ -93,6 +93,26 @@ if (existsSync(join(pkgDir, 'README.en.md'))) {
   check(english.includes('README.md'), 'README.en.md links back to the Chinese edition')
 }
 
+// Every image a README references must exist, and must be inside the published whitelist. A screenshot that
+// renders locally but is missing from the repository is a broken image on the project's front page, which is the
+// first thing a visitor sees — and it is exactly the failure a local preview cannot catch, because the file is
+// present in the working tree either way.
+for (const file of ['README.md', 'README.en.md']) {
+  const text = readFileSync(join(pkgDir, file), 'utf8')
+  const sources = [...text.matchAll(/<img[^>]*src="([^"]+)"/g)].map((match) => match[1])
+    .filter((source) => source.startsWith('http') === false)
+  for (const source of sources) {
+    const target = join(pkgDir, source)
+    const covered = (manifest.files ?? []).some((entry) => source === entry || source.startsWith(`${entry}/`))
+    check(existsSync(target), `${file} references ${source}, which exists`)
+    check(covered, `${source} is covered by the files whitelist`)
+  }
+  const images = sources.length
+  const languages = /简体中文/.test(text) && /English/.test(text)
+  check(images > 0, `${file} shows at least one screenshot`)
+  check(languages, `${file} offers a language switch`)
+}
+
 // ── sizes worth knowing before publishing ──
 const clientSize = statSync(clientPath).size
 const localeSize = statSync(join(pkgDir, 'lib', 'locale.js')).size

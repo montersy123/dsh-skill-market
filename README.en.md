@@ -1,12 +1,23 @@
-# dsh-skill-market
+<p align="right">
+  <a href="README.md">简体中文</a> · <strong>English</strong>
+</p>
 
-[![GitHub stars](https://img.shields.io/github/stars/montersy123/dsh-skill-market?style=social)](https://github.com/montersy123/dsh-skill-market)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Install from GitHub](https://img.shields.io/badge/install-github%3Amontersy123%2Fdsh--skill--market-181717?logo=github)](https://github.com/montersy123/dsh-skill-market)
+<h1 align="center">dsh-skill-market</h1>
 
-**A skill market for DeepSeek Harness: browse the skills on [SkillHub](https://skillhub.cn/skills?sortBy=score) and install them into Harness for real.**
+<p align="center">
+  <strong>A skill market for DeepSeek Harness</strong><br>
+  Browse the skills on <a href="https://skillhub.cn/skills?sortBy=score">SkillHub</a> and install them into Harness for real.
+</p>
 
-[中文](README.md) · [Development notes](docs/development.md)
+<p align="center">
+  <a href="https://github.com/montersy123/dsh-skill-market/stargazers"><img src="https://img.shields.io/github/stars/montersy123/dsh-skill-market?style=social" alt="GitHub stars"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/install-github%3Amontersy123%2Fdsh--skill--market-181717?logo=github" alt="Install from GitHub">
+</p>
+
+<p align="center">
+  <img src="assets/discover-detail-en.png" width="100%" alt="The skill market: category filters, search, per-card download counts and the safety mark.">
+</p>
 
 `dsh-skill-market` adds a **Skill Market** panel to the sidebar, turning SkillHub's catalogue into somewhere you can browse, filter, search, inspect — and **install from with one click**. An installed skill is an ordinary local skill: Harness's own skill system discovers it, it sits beside your hand-written skills, and it is callable from any conversation.
 
@@ -29,6 +40,16 @@ https://github.com/montersy123/dsh-skill-market
 ```
 
 Click **Install**. The repository is already runnable ESM — **there is no build step**.
+
+<p align="center">
+  <img src="assets/plugins-en.png" width="100%" alt="The Plugins page, with Skill Market listed in the sidebar and Add plugin at the top right.">
+</p>
+
+<p align="center">
+  <img src="assets/add-plugin-dialog.png" width="60%" alt="The Add plugin dialog: paste a package name, a GitHub repository URL, or a local directory path.">
+</p>
+
+<sub>The dialog above was captured with the UI in Chinese; the fields and the Install button are the same in English.</sub>
 
 ### With the `dsh` CLI
 
@@ -71,6 +92,16 @@ change several skills, then restart once.
 | **Saved** | A favourites list on this machine, with one-click install. |
 | **Local import** | Drop a `.zip`, or place a directory in the skill root — both are listed, and each is marked as which. |
 | **Details drawer** | Six tabs. The **Security** tab lists every third-party scanner's verdict individually. |
+
+### The details drawer
+
+Click any card to open it. A statistics strip sits at the top — downloads, saves, score, version — above six tabs:
+
+<p align="center">
+  <img src="assets/detail-en.png" width="60%" alt="The details drawer: statistics strip and the Overview, Files, Version, Permissions, Security and Metrics tabs.">
+</p>
+
+**Overview** carries the upstream summary and key facts; **Files** expands the real directory tree and previews individual files; **Version** lists each release's notes and can install any older one; **Permissions** separates what the skill declares from what this plugin does; **Metrics** is SkillHub's raw numbers.
 
 ### What "Install" actually does
 
@@ -124,8 +155,9 @@ each author who publishes there. This plugin only makes those skills easier to f
   `license` field in its own `SKILL.md`). **This repository's MIT applies to this plugin's own code only, never to
   any skill.**
 - **Installing downloads from upstream, at that moment.** This project does not host, mirror, relicense or resell
-  any skill content. The `files` whitelist in `package.json` is `lib`, `locale`, `icon.svg`, `cordis.patch.yml` and
-  the two READMEs; the captured responses under `tests/` are test data and are never published.
+  any skill content. The `files` whitelist in `package.json` is `lib`, `locale`, `icon.svg`, `cordis.patch.yml`,
+  `assets` and the three documents under `docs/`; the captured responses under `tests/` are test data and are never
+  published.
 - **What this plugin handles is index metadata** — names, descriptions, versions, download and save counts,
   category, third-party security-scan verdicts and file listings — plus the text of an individual file, fetched on
   request when you open it in the preview before installing. It is used only to display and identify skills, and

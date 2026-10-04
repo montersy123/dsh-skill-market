@@ -1,12 +1,23 @@
-# dsh-skill-market
+<p align="right">
+  <strong>简体中文</strong> · <a href="README.en.md">English</a>
+</p>
 
-[![GitHub stars](https://img.shields.io/github/stars/montersy123/dsh-skill-market?style=social)](https://github.com/montersy123/dsh-skill-market)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Install from GitHub](https://img.shields.io/badge/install-github%3Amontersy123%2Fdsh--skill--market-181717?logo=github)](https://github.com/montersy123/dsh-skill-market)
+<h1 align="center">dsh-skill-market</h1>
 
-**DeepSeek Harness 的技能市场:浏览 [SkillHub](https://skillhub.cn/skills?sortBy=score) 上的技能,并把它们真的装进 Harness。**
+<p align="center">
+  <strong>DeepSeek Harness 的技能市场</strong><br>
+  浏览 <a href="https://skillhub.cn/skills?sortBy=score">SkillHub</a> 上的技能,并把它们真的装进 Harness。
+</p>
 
-[English](README.en.md) · [开发笔记](docs/development.md)
+<p align="center">
+  <a href="https://github.com/montersy123/dsh-skill-market/stargazers"><img src="https://img.shields.io/github/stars/montersy123/dsh-skill-market?style=social" alt="GitHub stars"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/install-github%3Amontersy123%2Fdsh--skill--market-181717?logo=github" alt="Install from GitHub">
+</p>
+
+<p align="center">
+  <img src="assets/discover-zh.png" width="100%" alt="技能市场:分类筛选、搜索、卡片上的下载量与安全标记。">
+</p>
 
 `dsh-skill-market` 在侧边栏加一个 **Skill Market** 面板,把 SkillHub 的技能库变成可以浏览、筛选、搜索、查看详情,并**一键安装到本机**的地方。装好的技能和手写的本地技能没有区别 —— Harness 自己的技能系统会照常发现它们,在任何会话里都能调用。
 
@@ -29,6 +40,10 @@ https://github.com/montersy123/dsh-skill-market
 ```
 
 点 **安装**。仓库里的代码就是可运行的 ESM,**不需要任何构建步骤**。
+
+<p align="center">
+  <img src="assets/add-plugin-dialog.png" width="60%" alt="添加插件对话框:粘贴插件包名、GitHub 仓库地址或本地目录路径。">
+</p>
 
 ### 用 `dsh` 命令行安装
 
@@ -63,6 +78,16 @@ dsh plugin --profile desktop add ./dsh-skill-market
 | **收藏** | 只在本机的收藏夹,带一键安装。 |
 | **本地导入** | 拖放 `.zip`,或把目录直接放进技能目录 —— 两种都会列出来,并标明是哪一种。 |
 | **详情抽屉** | 六个页签。**安全扫描**页签逐个列出第三方检测方的结论。 |
+
+### 详情抽屉
+
+点任意卡片打开。顶部是一条统计条 —— 下载量、收藏数、综合评分、版本 —— 下面是六个页签:
+
+<p align="center">
+  <img src="assets/detail-zh.png" width="100%" alt="详情抽屉:统计条与概览、文件、版本历史、权限、安全扫描、指标六个页签。">
+</p>
+
+**概览**给出上游简介与关键信息;**文件**展开真实的目录树,点开单个文件可以预览内容;**版本历史**列出每个发布的更新说明,并能把任意旧版本装回去;**权限**区分技能自身的声明与本插件的行为;**指标**是 SkillHub 的原始数字。
 
 ### 「安装」到底做了什么
 
@@ -111,7 +136,7 @@ npm test                                  # 整套自检(29 项)
 面板里的技能**全部来自 [SkillHub](https://skillhub.cn)**。感谢平台的维护者,以及在上面发布技能的每一位作者。本插件只是让你在 Harness 里更方便地找到并安装它们。
 
 - **技能版权归原作者所有**,以每个技能自己声明的许可证(其 `SKILL.md` 中的 `license` 字段)为准。**本仓库的 MIT 只适用于本插件自身的代码,不适用于任何技能。**
-- **安装时从上游实时下载。** 本仓库不托管、不镜像、不转授权、不转售任何技能内容。`package.json` 的 `files` 白名单只包含 `lib`、`locale`、`icon.svg`、`cordis.patch.yml` 与两份 README;`tests/` 下的响应样本是测试数据,不会随包发布。
+- **安装时从上游实时下载。** 本仓库不托管、不镜像、不转授权、不转售任何技能内容。`package.json` 的 `files` 白名单只包含 `lib`、`locale`、`icon.svg`、`cordis.patch.yml`、`assets` 与三份文档;`tests/` 下的响应样本是测试数据,不会随包发布。
 - **本插件处理的是索引元数据** —— 名称、简介、版本、下载量、收藏数、分类、第三方安全扫描结论与文件清单,以及你在安装前主动点开某个文件时按需取回的那一份文本。这些只用于展示与识别技能,并附带回原始页面的链接。
 - **SkillHub 及其标识归各自所有者所有。** 本插件是独立的社区项目,与 SkillHub、腾讯及 DeepSeek **均无隶属、赞助或背书关系**。
 - **安装后的技能由你自己决定是否信任。** 安全扫描结论来自 SkillHub 的第三方检测方,仅供参考,不构成任何担保;安装前请阅读技能自身的 `SKILL.md`。面板只在所有检测方都报告安全时才显示绿色标记,但这不等于推荐。
