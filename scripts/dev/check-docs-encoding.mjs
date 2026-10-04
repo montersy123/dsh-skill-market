@@ -14,6 +14,7 @@ const root = join(import.meta.dirname, '..', '..')
 const files = [
   'README.md',
   'README.en.md',
+  'NOTICE',
   'docs/development.md',
   'docs/skillhub-api.md',
   'LICENSE',

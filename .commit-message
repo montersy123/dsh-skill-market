@@ -1,0 +1,22 @@
+docs: state that the skills belong to their authors, not to this plugin
+
+The panel lists and installs other people's work, and the README said nothing
+about that: a reader could reasonably have taken the plugin for the origin of the
+skills it shows. Both READMEs now say so up front, and carry a full
+acknowledgements section modelled on the sibling Skills Hub plugin, which solves
+the same problem for the same catalogue.
+
+The statements are written against what this plugin actually does, not against a
+template. Verified before writing: the npm `files` whitelist ships only lib,
+locale, the icon, the patch and the READMEs, so no skill content is ever
+published; the Host fetches skills from api.skillhub.cn at install time, so
+nothing is hosted, mirrored or resold; and the data held is index metadata plus
+the text of a single file fetched on request for the preview.
+
+Adds NOTICE, which Apache-2.0 section 4(d) asks a distributor to carry, and names
+it in `files` so it actually reaches the tarball. It records the same position in
+the form that travels with the package rather than only with the repository.
+
+Also records the licence boundary explicitly: Apache-2.0 covers this plugin's
+code and never any skill, since each skill is governed by whatever its own
+SKILL.md declares.

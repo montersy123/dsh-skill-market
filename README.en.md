@@ -10,6 +10,8 @@
 
 `dsh-skill-market` adds a **Skill Market** panel to the sidebar, turning SkillHub's catalogue into somewhere you can browse, filter, search, inspect — and **install from with one click**. An installed skill is an ordinary local skill: Harness's own skill system discovers it, it sits beside your hand-written skills, and it is callable from any conversation.
 
+> **The skills are not this plugin's work.** Every skill listed comes from [SkillHub](https://skillhub.cn), created and published by its own author. **Copyright belongs to that author**, and each skill is governed by whatever licence it declares. This plugin only makes them easier to find and install from inside Harness.
+
 - **Discover** — the whole SkillHub catalogue, most downloaded first. Category filters, keyword search, lazy loading, and install straight from the card.
 - **Installed** — what is on this machine. **Disable without uninstalling** (the directory moves to a parked store, where Harness cannot see it), update, or uninstall.
 - **Saved** — a favourites list, kept on this machine only.
@@ -95,9 +97,35 @@ npm test                                  # the whole suite (29 checks)
 `npm test` reports each check's exit code, and any failure fails the run. The rest are in [`scripts/`](scripts/),
 with one-off investigation scripts archived under [`scripts/dev/`](scripts/dev/).
 
+## Acknowledgements and copyright
+
+Every skill in the panel comes from **[SkillHub](https://skillhub.cn)**. Thanks to the platform's maintainers, and to
+each author who publishes there. This plugin only makes those skills easier to find and install from inside Harness.
+
+- **Copyright in each skill belongs to its author**, and each skill is governed by whatever licence it declares (the
+  `license` field in its own `SKILL.md`). **This repository's Apache-2.0 applies to this plugin's own code only,
+  never to any skill.**
+- **Installing downloads from upstream, at that moment.** This project does not host, mirror, relicense or resell
+  any skill content. The `files` whitelist in `package.json` is `lib`, `locale`, `icon.svg`, `cordis.patch.yml` and
+  the two READMEs; the captured responses under `tests/` are test data and are never published.
+- **What this plugin handles is index metadata** — names, descriptions, versions, download and save counts,
+  category, third-party security-scan verdicts and file listings — plus the text of an individual file, fetched on
+  request when you open it in the preview before installing. It is used only to display and identify skills, and
+  links back to the original pages.
+- **SkillHub and its marks belong to their respective owners.** This is an independent community project with **no
+  affiliation, sponsorship or endorsement** from SkillHub, Tencent or DeepSeek.
+- **Whether to trust an installed skill is your decision.** Security-scan verdicts come from SkillHub's third-party
+  scanners, are informational, and are not a warranty of any kind; read a skill's own `SKILL.md` before installing.
+  The panel shows a green mark only when every scanner reports safe, and that is not a recommendation.
+- **If you are a skill author or a platform**, and want what is shown here adjusted or removed, please
+  [open an issue](https://github.com/montersy123/dsh-skill-market/issues) and it will be handled promptly.
+
 ## License
 
 [Apache License 2.0](LICENSE) © 2026 montersy123
 
 Apache-2.0 rather than MIT because it carries an explicit **patent grant** and **contribution terms**, neither of
 which MIT addresses.
+
+**That licence covers this plugin's code only, not any skill.** See [NOTICE](NOTICE) for the third-party content
+statement.

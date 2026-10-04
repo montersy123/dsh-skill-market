@@ -1,0 +1,29 @@
+dsh-skill-market
+Copyright 2026 montersy123
+
+This product includes software developed as part of the DeepSeek Harness plugin
+ecosystem and is licensed under the Apache License, Version 2.0. See LICENSE.
+
+---
+
+Third-party content
+
+The skills this plugin browses and installs are NOT part of this project and are
+NOT covered by its licence.
+
+Each skill is created and published by its own author on SkillHub
+(https://skillhub.cn). Copyright in every skill belongs to that author, and each
+skill is governed by whatever licence its own SKILL.md declares. Installing a
+skill downloads it from SkillHub at that moment; this project does not host,
+mirror, relicense or resell any skill content.
+
+What this project does handle is index metadata retrieved from SkillHub's public
+API — names, descriptions, versions, download and save counts, category, the
+third-party security-scan verdicts, and file listings — together with individual
+file text fetched on request for the preview shown before you install. That
+metadata is used only to display and identify the skills, and links back to the
+original pages on SkillHub.
+
+SkillHub and its marks belong to their respective owners. This is an independent
+community project and is not affiliated with, endorsed by, or sponsored by
+SkillHub, Tencent, or DeepSeek.

@@ -40,7 +40,8 @@
     "icon.svg",
     "cordis.patch.yml",
     "README.md",
-    "README.en.md"
+    "README.en.md",
+    "NOTICE"
   ],
   "engines": {
     "node": ">=20"
