@@ -1,17 +1,18 @@
 # Dependencies, if a checkout ever grows any
 node_modules/
 
-# Packing and install scratch — rebuilt by `npm run install:plugin`
-scripts/dist/
+# Generated scratch, rebuilt on demand:
+#   scripts/dev/asar-out/    the runtime copies extracted from app.asar (`scripts/dev/asar-extract.mjs`)
+#   scripts/dev/reactsmoke/  the scratch jsdom + React install the render harness runs against
+#   scripts/dist/            the tarball `npm run install:plugin` builds and installs
+# They are megabytes of other people's code, none of it ours to publish, and all of it reproducible.
 scripts/dev/asar-out/
+scripts/dev/reactsmoke/
+scripts/dist/
 *.tgz
 
-# The extracted runtime copy. It is megabytes of the Harness's own packages, reproducible with
-# `node scripts/dev/asar-extract.mjs`, and not ours to publish.
-scripts/dev/asar-out/
-
-# Runtime state. `data/` holds parked skills and the install ledger, and it belongs to the user's
-# profile, never to the repository — the plugin resolves it outside the package for exactly that reason.
+# Runtime state. `data/` holds parked skills and the install ledger, and it belongs to the user's profile,
+# never to the repository — the plugin resolves it outside the package for exactly that reason.
 data/
 
 # Editor and OS noise

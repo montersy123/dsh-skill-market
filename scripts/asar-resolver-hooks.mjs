@@ -14,9 +14,12 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const EXTRACTED = join(HERE, 'asar-out', 'dsh', 'node_modules')
+// The extracted runtime copies and the scratch jsdom install live with the archived dev tooling under
+// `scripts/dev/`, not beside this file. Pointing at `HERE/asar-out` and `HERE/reactsmoke` silently fell back to
+// reading `app.asar` directly, so the checks passed while never exercising the extracted copies at all.
+const EXTRACTED = join(HERE, 'dev', 'asar-out', 'dsh', 'node_modules')
 const PROFILE = join(process.env.USERPROFILE ?? process.env.HOME ?? '', '.dsh', 'profiles', process.env.DSH_PROFILE ?? 'desktop', 'node_modules')
-const REACT_DIR = join(HERE, 'reactsmoke', 'node_modules')
+const REACT_DIR = join(HERE, 'dev', 'reactsmoke', 'node_modules')
 const ASAR = 'D:\\Program Files\\DeepSeek Harness\\resources\\app.asar'
 const ASAR_PREFIX = '/dsh/node_modules/'
 
