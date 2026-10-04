@@ -1,8 +1,8 @@
 # dsh-skill-market
 
-[![npm version](https://img.shields.io/npm/v/@montersy123/dsh-skill-market)](https://www.npmjs.com/package/@montersy123/dsh-skill-market)
 [![GitHub stars](https://img.shields.io/github/stars/montersy123/dsh-skill-market?style=social)](https://github.com/montersy123/dsh-skill-market)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Install from GitHub](https://img.shields.io/badge/install-github%3Amontersy123%2Fdsh--skill--market-181717?logo=github)](https://github.com/montersy123/dsh-skill-market)
 
 **A skill market for DeepSeek Harness: browse the skills on [SkillHub](https://skillhub.cn/skills?sortBy=score) and install them into Harness for real.**
 
@@ -20,29 +20,47 @@
 
 ## Install
 
-### From the Harness UI
+### From the Harness UI (recommended)
 
-Type `dsh-skill-market` into the **Add plugin** wizard's search box and click Install.
+Open **DeepSeek Harness → Plugins → Add plugin** and paste this repository's URL:
+
+```text
+https://github.com/montersy123/dsh-skill-market
+```
+
+Click **Install**. The repository is already runnable ESM — **there is no build step**.
 
 ### With the `dsh` CLI
-
-```sh
-dsh plugin --profile desktop add @montersy123/dsh-skill-market
-```
-
-Update:
-
-```sh
-dsh plugin --profile desktop update @montersy123/dsh-skill-market@latest
-```
-
-You can also install straight from GitHub — the repository is already runnable ESM, so **there is no build step**:
 
 ```sh
 dsh plugin --profile desktop add github:montersy123/dsh-skill-market
 ```
 
-Then start the UI. **Installing a skill requires restarting DeepSeek Harness**: the files land on disk immediately, but a conversation carries the skill catalogue its agent was built with, so a newly installed skill becomes callable in **new** conversations. The panel says so in a banner and a toast, and does not block any control while it waits — change several skills, then restart once.
+Then start the UI.
+
+> **Why installing from GitHub does not ask you to authorise build scripts.** pnpm refuses to run a git
+> dependency's build scripts by default, so a plugin installed from source control usually asks you to add
+> `allowBuilds` to your profile's `pnpm-workspace.yaml`. This repository's `lib/` *is* the finished artifact — no
+> TypeScript, no bundling, no `prepare` — so that prompt never appears. Measured: `pnpm add
+> github:montersy123/dsh-skill-market` installs as-is.
+
+### From a local directory
+
+If you have already cloned the repository, point at the directory instead:
+
+```sh
+dsh plugin --profile desktop add ./dsh-skill-market
+```
+
+### Updating
+
+An installed plugin does not update itself. Pull the new version and run the install command again — installed
+skills, disabled state and favourites are all preserved, because that state lives outside the package.
+
+**Installing a skill requires restarting DeepSeek Harness**: the files land on disk immediately, but a
+conversation carries the skill catalogue its agent was built with, so a newly installed skill becomes callable in
+**new** conversations. The panel says so in a banner and a toast, and does not block any control while it waits —
+change several skills, then restart once.
 
 ## Using it
 

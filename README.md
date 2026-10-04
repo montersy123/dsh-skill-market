@@ -1,8 +1,8 @@
 # dsh-skill-market
 
-[![npm version](https://img.shields.io/npm/v/@montersy123/dsh-skill-market)](https://www.npmjs.com/package/@montersy123/dsh-skill-market)
 [![GitHub stars](https://img.shields.io/github/stars/montersy123/dsh-skill-market?style=social)](https://github.com/montersy123/dsh-skill-market)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Install from GitHub](https://img.shields.io/badge/install-github%3Amontersy123%2Fdsh--skill--market-181717?logo=github)](https://github.com/montersy123/dsh-skill-market)
 
 **DeepSeek Harness 的技能市场:浏览 [SkillHub](https://skillhub.cn/skills?sortBy=score) 上的技能,并把它们真的装进 Harness。**
 
@@ -20,29 +20,39 @@
 
 ## 安装
 
-### 从 Harness 界面安装
+### 从 Harness 界面安装(推荐)
 
-在 **添加插件** 的搜索框里填 `dsh-skill-market`,点安装。
+打开 **DeepSeek Harness → 插件 → 添加插件**,粘贴本仓库地址:
+
+```text
+https://github.com/montersy123/dsh-skill-market
+```
+
+点 **安装**。仓库里的代码就是可运行的 ESM,**不需要任何构建步骤**。
 
 ### 用 `dsh` 命令行安装
-
-```sh
-dsh plugin --profile desktop add @montersy123/dsh-skill-market
-```
-
-更新:
-
-```sh
-dsh plugin --profile desktop update @montersy123/dsh-skill-market@latest
-```
-
-也可以直接从 GitHub 安装 —— 仓库里的代码就是可运行的 ESM,**不需要构建步骤**:
 
 ```sh
 dsh plugin --profile desktop add github:montersy123/dsh-skill-market
 ```
 
-装完启动 UI 即可。**安装技能后需要重启 DeepSeek Harness**:技能文件会立刻落到磁盘,但一场对话用的是它开始时就确定的技能清单,所以新装的技能在**新会话**里才能调用。面板会用一条提示条和一个 toast 说明这一点,并且不会因此锁住任何控件 —— 你可以一次改好几个技能,再重启一次。
+装完启动 UI 即可。
+
+> **为什么从 GitHub 装不会要求你授权构建脚本?** pnpm 默认拒绝运行 git 依赖的构建脚本,所以从源码托管安装的插件通常会要求你在 profile 的 `pnpm-workspace.yaml` 里加 `allowBuilds`。本仓库的 `lib/` 就是最终产物(没有 TypeScript、没有打包步骤、没有 `prepare`),因此不触发这道授权 —— 已实测:直接 `pnpm add github:montersy123/dsh-skill-market` 即可装成。
+
+### 从本地目录安装
+
+已经克隆了仓库的话,直接指向该目录:
+
+```sh
+dsh plugin --profile desktop add ./dsh-skill-market
+```
+
+### 升级
+
+安装的插件不会自动升级。拉取新版本后重新执行安装命令即可 —— 已装的技能、停用状态与收藏都会保留(状态存放在包外)。
+
+**安装技能后需要重启 DeepSeek Harness**:技能文件会立刻落到磁盘,但一场对话用的是它开始时就确定的技能清单,所以新装的技能在**新会话**里才能调用。面板会用一条提示条和一个 toast 说明这一点,并且不会因此锁住任何控件 —— 你可以一次改好几个技能,再重启一次。
 
 ## 用它
 

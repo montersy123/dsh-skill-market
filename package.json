@@ -14,9 +14,6 @@
   "bugs": {
     "url": "https://github.com/montersy123/dsh-skill-market/issues"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "keywords": [
     "dsh",
     "dsh-plugin",
