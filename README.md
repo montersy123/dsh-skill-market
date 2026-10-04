@@ -47,20 +47,38 @@ https://github.com/montersy123/dsh-skill-market
 
 ### 用 `dsh` 命令行安装
 
+按你运行的形态选一个 profile。**桌面端**是 `desktop`,**Web 端**是 `web`:
+
 ```sh
+# Web 端
+dsh plugin --profile web add github:montersy123/dsh-skill-market
+
+# 桌面端
 dsh plugin --profile desktop add github:montersy123/dsh-skill-market
 ```
 
-装完启动 UI 即可。
+`dsh plugin` 会把包管理操作转发给 pnpm,所以 `web` 与 `desktop` 的差别只在装进哪个 profile。**先确认 pnpm 在 PATH 上。**
+
+装完**重启对应形态**让新的 bundle 层生效:
+
+```sh
+dsh --profile web
+```
+
+想确认这一层真的加载了,可以在启动前 dump 一次配置,输出里应当出现 `# == @montersy123/dsh-skill-market`:
+
+```sh
+dsh --profile web --dump-config
+```
 
 > **为什么从 GitHub 装不会要求你授权构建脚本?** pnpm 默认拒绝运行 git 依赖的构建脚本,所以从源码托管安装的插件通常会要求你在 profile 的 `pnpm-workspace.yaml` 里加 `allowBuilds`。本仓库的 `lib/` 就是最终产物(没有 TypeScript、没有打包步骤、没有 `prepare`),因此不触发这道授权 —— 已实测:直接 `pnpm add github:montersy123/dsh-skill-market` 即可装成。
 
 ### 从本地目录安装
 
-已经克隆了仓库的话,直接指向该目录:
+已经克隆了仓库的话,直接指向该目录(profile 名同上):
 
 ```sh
-dsh plugin --profile desktop add ./dsh-skill-market
+dsh plugin --profile web add ./dsh-skill-market
 ```
 
 ### 升级

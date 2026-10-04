@@ -47,11 +47,31 @@ Click **Install**. The repository is already runnable ESM — **there is no buil
 
 ### With the `dsh` CLI
 
+Pick the profile for the way you run DSH. **Web** is `web`; the **desktop app** is `desktop`:
+
 ```sh
+# Web
+dsh plugin --profile web add github:montersy123/dsh-skill-market
+
+# Desktop app
 dsh plugin --profile desktop add github:montersy123/dsh-skill-market
 ```
 
-Then start the UI.
+`dsh plugin` forwards package management to pnpm, so the only difference between `web` and `desktop` is which
+profile the plugin lands in. **Make sure pnpm is on your PATH first.**
+
+Restart that same form afterwards so the new bundle layer takes effect:
+
+```sh
+dsh --profile web
+```
+
+To confirm the layer really loaded, dump the config before starting — the output should contain
+`# == @montersy123/dsh-skill-market`:
+
+```sh
+dsh --profile web --dump-config
+```
 
 > **Why installing from GitHub does not ask you to authorise build scripts.** pnpm refuses to run a git
 > dependency's build scripts by default, so a plugin installed from source control usually asks you to add
@@ -61,10 +81,10 @@ Then start the UI.
 
 ### From a local directory
 
-If you have already cloned the repository, point at the directory instead:
+If you have already cloned the repository, point at the directory instead (same profile names):
 
 ```sh
-dsh plugin --profile desktop add ./dsh-skill-market
+dsh plugin --profile web add ./dsh-skill-market
 ```
 
 ### Updating
