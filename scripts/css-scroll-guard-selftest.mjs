@@ -39,13 +39,13 @@ const plants = [
   },
   {
     name: 'a body that will not scroll',
-    from: '.sm-insp-body { flex: 1; min-height: 0; overflow-y: auto; padding: 20px; }',
-    to: '.sm-insp-body { flex: 1; min-height: 0; overflow-y: visible; padding: 20px; }',
+    from: 'flex: 1; min-height: min(70dvh, 560px); overflow-y: auto; padding: 20px;',
+    to: 'flex: 1; min-height: min(70dvh, 560px); overflow-y: visible; padding: 20px;',
   },
   {
-    name: 'a body that can grow instead of scrolling',
-    from: '.sm-insp-body { flex: 1; min-height: 0; overflow-y: auto; padding: 20px; }',
-    to: '.sm-insp-body { flex: 1; overflow-y: auto; padding: 20px; }',
+    name: 'a body with no usable-height floor',
+    from: 'flex: 1; min-height: min(70dvh, 560px); overflow-y: auto; padding: 20px;',
+    to: 'flex: 1; min-height: 0; overflow-y: auto; padding: 20px;',
   },
   {
     name: 'a shrinkable header',
@@ -58,19 +58,14 @@ const plants = [
     to: 'display: flex; flex-direction: row;\n}\n[data-skill-market] .sm-inspector.open',
   },
   {
-    name: 'a panel that sizes against its mount instead of the viewport',
-    from: 'height: 100vh; height: 100dvh; max-height: 100%; min-height: 0; flex: 1 1 auto;',
-    to: 'height: 100%; max-height: 100%; min-height: 0; flex: 1 1 auto;',
+    name: 'a panel that scrolls, which would take the discovery page with it',
+    from: 'height: 100%; max-height: 100%; position: relative; overflow: hidden;',
+    to: 'height: 100%; max-height: 100%; position: relative; overflow: hidden; overflow-y: auto;',
   },
   {
-    name: 'a panel with no dvh override',
-    from: 'height: 100vh; height: 100dvh; max-height: 100%; min-height: 0; flex: 1 1 auto;',
-    to: 'height: 100vh; max-height: 100%; min-height: 0; flex: 1 1 auto;',
-  },
-  {
-    name: 'a panel with no scroll backstop',
-    from: 'position: relative; overflow: hidden; overflow-y: auto;',
-    to: 'position: relative; overflow: hidden;',
+    name: 'a panel sized against the viewport',
+    from: 'height: 100%; max-height: 100%; position: relative; overflow: hidden;',
+    to: 'height: 100dvh; max-height: 100%; position: relative; overflow: hidden;',
   },
 ]
 

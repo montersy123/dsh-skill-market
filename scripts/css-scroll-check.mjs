@@ -68,17 +68,22 @@ const inDrawer = (selector) => DRAWER.test(selector) && /^\[data-skill-market\]$
 
 const VIEWPORT_UNIT = /(?:^|[\s:(,])\d*\.?\d+(?:vh|vw|vmin|vmax|dvh|svh|lvh|dvw)\b/
 
+// `.sm-insp-body` is the one exception, and only for `min-height`. A floor expressed in viewport units is what
+// keeps this box usable when the drawer is squeezed; a viewport unit anywhere else in the drawer is the defect this
+// check exists for (the `max-height: 60vh` on the file preview that clipped long files).
+const BODY_SELECTOR = '[data-skill-market] .sm-insp-body'
+
 for (const { selector, body } of all) {
   if (inDrawer(selector) === false) continue
 
-  // 1. no viewport-relative sizing inside the drawer. The panel takes its height from the viewport on purpose —
-  //    a percentage of an indefinite mount is what squeezed this drawer's body to 40px — but nothing below the
-  //    panel may, because the drawer is only as tall as the panel and 60vh there is unrelated to its own space.
+  // 1. no viewport-relative sizing inside the drawer, except a min-height floor on the body itself.
   for (const declaration of body.split(';')) {
     const [property, value = ''] = declaration.split(':')
     if (property === undefined || value === '') continue
+    const name = property.trim()
+    if (selector === BODY_SELECTOR && name === 'min-height') continue
     if (VIEWPORT_UNIT.test(value)) {
-      failures.push(`${selector} sizes "${property}" against the viewport (${value.trim()}) — the drawer is only as tall as the panel, so use the body's own scroll instead`)
+      failures.push(`${selector} sizes "${name}" against the viewport (${value.trim()}) — the drawer is only as tall as the panel, so use the body's own scroll instead`)
     }
   }
 
@@ -109,21 +114,32 @@ for (const { selector, body } of all) {
 // There are two rules whose selector is exactly `[data-skill-market]`: the first declares the token table, the
 // second the layout. Picking the first by selector alone silently asserted against a block of CSS variables, so the
 // layout rule is found by a declaration only it carries.
+//
+// The panel must NOT be a scroll container. It was briefly given `height: 100dvh; overflow-y: auto` to rescue the
+// drawer, and the result was that the whole discovery page scrolled — the opposite of the original requirement that
+// only the card list moves. The panel's height stays a percentage and its overflow stays hidden; whatever needs a
+// usable height is given one directly.
 const panel = all.find((rule) => rule.selector === '[data-skill-market]' && /flex-direction:\s*column/.test(rule.body))
 if (panel === undefined) {
   failures.push('[data-skill-market] has no layout rule, so the panel has no height contract at all')
 } else {
-  if (/height:\s*100(vh|dvh)/.test(panel.body) === false) {
-    failures.push('the panel must take its height from the viewport (height: 100vh with a 100dvh override) — a percentage resolves to auto against a content-sized mount, which squeezes the drawer body to an unusable height')
-  }
-  if (/height:\s*100dvh/.test(panel.body) === false) {
-    failures.push('the panel should override 100vh with 100dvh, so a collapsing mobile toolbar cannot clip it')
+  for (const declaration of panel.body.split(';')) {
+    const [property, value = ''] = declaration.split(':')
+    if (property === undefined) continue
+    const name = property.trim()
+    const text = value.trim()
+    if (name === 'overflow' && /(^|\s)(auto|scroll)(\s|$)/.test(text)) {
+      failures.push(`the panel declares "overflow: ${text}" — it must not be a scroll container, or the whole discovery page scrolls instead of just the card list`)
+    }
+    if (name === 'overflow-y' && /^(auto|scroll)$/.test(text)) {
+      failures.push(`the panel declares "overflow-y: ${text}" — the panel must not scroll; that is what made the discovery page scroll`)
+    }
+    if (name === 'height' && /(vh|dvh|svh|lvh)/.test(text)) {
+      failures.push(`the panel sizes its height against the viewport (${text}) — that makes it taller than a shorter mount, and the page scrolls. Keep the percentage and give the drawer body its own floor instead`)
+    }
   }
   if (/min-height:\s*0/.test(panel.body) === false) {
     failures.push('the panel must keep min-height: 0, or it will refuse to shrink inside a flex mount')
-  }
-  if (/overflow-y:\s*auto/.test(panel.body) === false) {
-    failures.push('the panel should keep overflow-y: auto as a backstop, so a mount shorter than the viewport scrolls instead of clipping the panel contents')
   }
 }
 
@@ -136,11 +152,14 @@ if (body === undefined) {
   if (/overflow-y:\s*auto/.test(declarations) === false) {
     failures.push('.sm-insp-body no longer declares "overflow-y: auto", so the drawer cannot scroll')
   }
-  if (/min-height:\s*0/.test(declarations) === false) {
-    failures.push('.sm-insp-body no longer declares "min-height: 0" — as a flex child it will grow to fit its content instead of scrolling')
-  }
   if (/flex:\s*1/.test(declarations) === false) {
     failures.push('.sm-insp-body no longer declares "flex: 1", so it will not fill the space under the header')
+  }
+  // The usable-height floor. `min-height: 0` is the usual flex-child rule, but here it is exactly wrong: measured,
+  // a squeezed drawer collapsed this box to 40px, which scrolls in principle and not in practice. A viewport unit
+  // is required, because a percentage of the squeezed parent is what collapsed it.
+  if (/min-height:\s*min\([^)]*\d+(vh|dvh)/.test(declarations) === false) {
+    failures.push('.sm-insp-body must keep a viewport-scaled min-height (min-height: min(<n>dvh, <n>px)) — without it a squeezed drawer collapses this box to a few dozen pixels, which is scrollable in principle and unusable in practice')
   }
 }
 
