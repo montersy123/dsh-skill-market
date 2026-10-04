@@ -2,6 +2,16 @@
 
 本文件记录每个版本的变更。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.1] - 2026-10-05
+
+**插件行为没有变化。** 这次发布只是把仓库里已有的文档与配置标记成一个版本。
+
+- 新增 `screenshots.json`,声明插件市场展示用的截图。
+- README 补上截图、顶部的中英切换与 MIT 许可徽章。
+- 安装说明区分 **Web 端(`web`)** 与 **桌面端(`desktop`)**,并补上 pnpm 前置条件、重启方式与 `--dump-config` 验证方法。
+- 许可由 Apache-2.0 改回 MIT,与生态内其他插件一致。
+- 新增 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md),说明面板中的技能来自 SkillHub、**版权归原作者**、以各自 `SKILL.md` 声明的许可证为准。
+
 ## [1.0.0] - 2026-10-05
 
 首个公开版本。
@@ -41,4 +51,5 @@ MIT。面板中的技能来自 SkillHub,由各自作者发布,**版权归原作�
 
 本项目的更新日志以中文撰写。英文发布说明见每个 GitHub Release 页面。
 
+[1.0.1]: https://github.com/montersy123/dsh-skill-market/releases/tag/v1.0.1
 [1.0.0]: https://github.com/montersy123/dsh-skill-market/releases/tag/v1.0.0
