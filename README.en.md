@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@montersy123/dsh-skill-market)](https://www.npmjs.com/package/@montersy123/dsh-skill-market)
 [![GitHub stars](https://img.shields.io/github/stars/montersy123/dsh-skill-market?style=social)](https://github.com/montersy123/dsh-skill-market)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 **A skill market for DeepSeek Harness: browse the skills on [SkillHub](https://skillhub.cn/skills?sortBy=score) and install them into Harness for real.**
 
@@ -97,4 +97,7 @@ with one-off investigation scripts archived under [`scripts/dev/`](scripts/dev/)
 
 ## License
 
-[MIT](LICENSE) © 2026 montersy123
+[Apache License 2.0](LICENSE) © 2026 montersy123
+
+Apache-2.0 rather than MIT because it carries an explicit **patent grant** and **contribution terms**, neither of
+which MIT addresses.

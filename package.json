@@ -4,7 +4,7 @@
   "private": false,
   "description": "Browse, search and install SkillHub skills inside DeepSeek Harness. / 在 DeepSeek Harness 内浏览、搜索并安装 SkillHub 技能。",
   "type": "module",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "montersy123",
   "repository": {
     "type": "git",

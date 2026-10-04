@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@montersy123/dsh-skill-market)](https://www.npmjs.com/package/@montersy123/dsh-skill-market)
 [![GitHub stars](https://img.shields.io/github/stars/montersy123/dsh-skill-market?style=social)](https://github.com/montersy123/dsh-skill-market)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 **DeepSeek Harness 的技能市场:浏览 [SkillHub](https://skillhub.cn/skills?sortBy=score) 上的技能,并把它们真的装进 Harness。**
 
@@ -96,4 +96,6 @@ npm test                                  # 整套自检(29 项)
 
 ## 许可
 
-[MIT](LICENSE) © 2026 montersy123
+[Apache License 2.0](LICENSE) © 2026 montersy123
+
+选择 Apache-2.0 而不是 MIT,是因为它包含**明确的专利授权**与**贡献者条款**,MIT 对这两件事都没有涉及。
