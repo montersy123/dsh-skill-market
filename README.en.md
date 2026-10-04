@@ -42,14 +42,8 @@ https://github.com/montersy123/dsh-skill-market
 Click **Install**. The repository is already runnable ESM — **there is no build step**.
 
 <p align="center">
-  <img src="assets/plugins-en.png" width="100%" alt="The Plugins page, with Skill Market listed in the sidebar and Add plugin at the top right.">
+  <img src="assets/add-plugin-en.png" width="72%" alt="The Plugins page with the Add plugin dialog open: enter a package name, a GitHub repository address or a local directory path, then click Install.">
 </p>
-
-<p align="center">
-  <img src="assets/add-plugin-dialog.png" width="60%" alt="The Add plugin dialog: paste a package name, a GitHub repository URL, or a local directory path.">
-</p>
-
-<sub>The dialog above was captured with the UI in Chinese; the fields and the Install button are the same in English.</sub>
 
 ### With the `dsh` CLI
 
@@ -95,11 +89,7 @@ change several skills, then restart once.
 
 ### The details drawer
 
-Click any card to open it. A statistics strip sits at the top — downloads, saves, score, version — above six tabs:
-
-<p align="center">
-  <img src="assets/detail-en.png" width="60%" alt="The details drawer: statistics strip and the Overview, Files, Version, Permissions, Security and Metrics tabs.">
-</p>
+Click any card to open it. A statistics strip sits at the top — downloads, saves, score, version — above six tabs. The drawer is the panel on the right in the screenshot at the top of this page.
 
 **Overview** carries the upstream summary and key facts; **Files** expands the real directory tree and previews individual files; **Version** lists each release's notes and can install any older one; **Permissions** separates what the skill declares from what this plugin does; **Metrics** is SkillHub's raw numbers.
 

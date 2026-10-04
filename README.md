@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/discover-zh.png" width="100%" alt="技能市场:分类筛选、搜索、卡片上的下载量与安全标记。">
+  <img src="assets/discover-detail-zh.png" width="100%" alt="技能市场与详情抽屉:分类筛选、搜索、卡片上的下载量与安全标记,右侧展开单个技能的详情。">
 </p>
 
 `dsh-skill-market` 在侧边栏加一个 **Skill Market** 面板,把 SkillHub 的技能库变成可以浏览、筛选、搜索、查看详情,并**一键安装到本机**的地方。装好的技能和手写的本地技能没有区别 —— Harness 自己的技能系统会照常发现它们,在任何会话里都能调用。
@@ -42,7 +42,7 @@ https://github.com/montersy123/dsh-skill-market
 点 **安装**。仓库里的代码就是可运行的 ESM,**不需要任何构建步骤**。
 
 <p align="center">
-  <img src="assets/add-plugin-dialog.png" width="60%" alt="添加插件对话框:粘贴插件包名、GitHub 仓库地址或本地目录路径。">
+  <img src="assets/add-plugin-zh.png" width="72%" alt="插件页与「添加插件」对话框:填入插件包名、GitHub 仓库地址或本地目录路径,然后点安装。">
 </p>
 
 ### 用 `dsh` 命令行安装
@@ -81,11 +81,7 @@ dsh plugin --profile desktop add ./dsh-skill-market
 
 ### 详情抽屉
 
-点任意卡片打开。顶部是一条统计条 —— 下载量、收藏数、综合评分、版本 —— 下面是六个页签:
-
-<p align="center">
-  <img src="assets/detail-zh.png" width="100%" alt="详情抽屉:统计条与概览、文件、版本历史、权限、安全扫描、指标六个页签。">
-</p>
+点任意卡片打开。顶部是一条统计条 —— 下载量、收藏数、综合评分、版本 —— 下面是六个页签。上图右侧展开的就是这个抽屉。
 
 **概览**给出上游简介与关键信息;**文件**展开真实的目录树,点开单个文件可以预览内容;**版本历史**列出每个发布的更新说明,并能把任意旧版本装回去;**权限**区分技能自身的声明与本插件的行为;**指标**是 SkillHub 的原始数字。
 
