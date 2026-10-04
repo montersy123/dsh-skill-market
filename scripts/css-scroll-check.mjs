@@ -97,7 +97,7 @@ for (const { selector, body } of all) {
 }
 
 // ── the contract itself must still be declared ──
-const body = all.find((rule) => rule.selector.includes('.sm-insp-body'))
+const body = all.find((rule) => rule.selector === '[data-skill-market] .sm-insp-body')
 if (body === undefined) {
   failures.push('.sm-insp-body has no rule — the drawer has no scroll region at all')
 } else {
@@ -113,9 +113,23 @@ if (body === undefined) {
   }
 }
 
-const drawer = all.find((rule) => rule.selector.includes('.sm-inspector {'))
-if (drawer !== undefined && /flex-direction:\s*column/.test(drawer.body) === false) {
+// Selector lookup is by class name alone, NOT by `.name {`. The rule parser splits on the brace, so the captured
+// selector never contains one — a lookup that required it matched nothing and its assertion silently never ran.
+const drawer = all.find((rule) => rule.selector.includes('.sm-inspector'))
+if (drawer === undefined) {
+  failures.push('.sm-inspector has no rule, so the head/body split has nothing to work with')
+} else if (/flex-direction:\s*column/.test(drawer.body) === false) {
   failures.push('.sm-inspector is no longer a column flex container, which the head/body split depends on')
+}
+
+// The header must not shrink. Measured with the real stylesheet in a standalone page: with the default
+// 0 1 auto a short drawer compresses the header instead of letting the body scroll, and the header then clips its
+// own contents. The body is the one element allowed to give.
+const head = all.find((rule) => rule.selector === '[data-skill-market] .sm-insp-head')
+if (head === undefined) {
+  failures.push('.sm-insp-head has no rule')
+} else if (/flex:\s*0\s+0\s+auto/.test(head.body) === false) {
+  failures.push('.sm-insp-head must declare "flex: 0 0 auto" — otherwise a short drawer shrinks the header instead of scrolling the body, and the header clips its own contents')
 }
 
 const drawerRules = all.filter((rule) => DRAWER.test(rule.selector))
