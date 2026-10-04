@@ -71,8 +71,6 @@ dsh --profile web
 dsh --profile web --dump-config
 ```
 
-> **为什么从 GitHub 装不会要求你授权构建脚本?** pnpm 默认拒绝运行 git 依赖的构建脚本,所以从源码托管安装的插件通常会要求你在 profile 的 `pnpm-workspace.yaml` 里加 `allowBuilds`。本仓库的 `lib/` 就是最终产物(没有 TypeScript、没有打包步骤、没有 `prepare`),因此不触发这道授权 —— 已实测:直接 `pnpm add github:montersy123/dsh-skill-market` 即可装成。
-
 ### 从本地目录安装
 
 已经克隆了仓库的话,直接指向该目录(profile 名同上):

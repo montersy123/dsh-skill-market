@@ -73,12 +73,6 @@ To confirm the layer really loaded, dump the config before starting — the outp
 dsh --profile web --dump-config
 ```
 
-> **Why installing from GitHub does not ask you to authorise build scripts.** pnpm refuses to run a git
-> dependency's build scripts by default, so a plugin installed from source control usually asks you to add
-> `allowBuilds` to your profile's `pnpm-workspace.yaml`. This repository's `lib/` *is* the finished artifact — no
-> TypeScript, no bundling, no `prepare` — so that prompt never appears. Measured: `pnpm add
-> github:montersy123/dsh-skill-market` installs as-is.
-
 ### From a local directory
 
 If you have already cloned the repository, point at the directory instead (same profile names):
