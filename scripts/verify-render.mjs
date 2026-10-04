@@ -71,6 +71,11 @@ const assertions = [
   ['every figure still names itself in a tooltip', () => (report.cardStats ?? []).every((row) => row.titles.length === 3)],
   ['no rendered text is still a dictionary key', () => (report.untranslatedKeys ?? []).length === 0],
   ['the drawer opens on a card click', () => report.interactions?.inspectorOpen === true],
+  // The drawer body must be the inspector's own child. Nested inside the header it gets no height from the flex
+  // container, grows to its content height, and is clipped — which is exactly the "cannot scroll" defect.
+  // Asserted as `=== true`, not `!== false`: a null (read while no drawer was open) must fail, not pass.
+  ['the drawer body is a direct child of the inspector', () => report.interactions?.drawerBodyParentIsInspector === true],
+  ['the drawer body is not nested inside the header', () => report.interactions?.drawerBodyInsideHead === false],
   ['the drawer has all six tabs', () => (report.interactions?.inspectorTabs ?? []).length === 6],
   ['the tabs are translated, not keys', () => (report.interactions?.inspectorTabs ?? []).every((label) => /^tab\./.test(label) === false)],
   ['the safety tab is named 安全扫描, not 安全', () => report.interactions?.safetyTabIsNotJustSafe === true],

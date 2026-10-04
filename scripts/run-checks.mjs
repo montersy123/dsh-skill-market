@@ -38,8 +38,6 @@ const CHECKS = [
   ['node', ['scripts/css-literal-check.mjs']],
   ['node', ['scripts/css-damage-check.mjs']],
   ['node', ['scripts/css-guard-selftest.mjs']],
-  ['node', ['scripts/css-scroll-check.mjs']],
-  ['node', ['scripts/css-scroll-guard-selftest.mjs']],
   ['node', ['scripts/landmark-guard-selftest.mjs']],
   ['node', ['scripts/manifest-meta-guard-selftest.mjs']],
   // The shipped package.

@@ -1345,6 +1345,23 @@ if (argv.includes('--interactions')) {
   interactions.inspectorOpen = host.querySelector('.sm-inspector.open') !== null
   interactions.inspectorTitle = host.querySelector('.sm-insp-head h2')?.textContent ?? null
   interactions.inspectorTabs = Array.from(host.querySelectorAll('.sm-tab')).map((element) => element.textContent)
+  // The drawer's body must be the inspector's own child, NOT nested inside its header. Written as one nested
+  // `h(...)` call by mistake, the body landed inside `.sm-insp-head` — a block, row-direction box — so `flex: 1`
+  // distributed horizontal space and the body was never given a height. Measured in the running app at the time:
+  // clientHeight 5862 === scrollHeight 5862, the full content height, with everything past the panel clipped.
+  // Computed HERE, while the drawer is open: reading it from the page-level structure object gave null, and an
+  // assertion written as `!== false` then passed without ever inspecting anything.
+  interactions.drawerBodyParentIsInspector = (() => {
+    const bodyNode = host.querySelector('.sm-insp-body')
+    const inspectorNode = host.querySelector('.sm-inspector')
+    if (bodyNode === null || inspectorNode === null) return null
+    return bodyNode.parentElement === inspectorNode
+  })()
+  interactions.drawerBodyInsideHead = (() => {
+    const bodyNode = host.querySelector('.sm-insp-body')
+    if (bodyNode === null) return null
+    return bodyNode.closest('.sm-insp-head') !== null
+  })()
   // The overview must be the SKILL.md body: frontmatter stripped, Markdown rendered.
   interactions.overviewHasHeading = host.querySelector('.sm-md h3, .sm-md h4')?.textContent ?? null
   interactions.overviewHasList = host.querySelectorAll('.sm-md li').length
