@@ -2,6 +2,19 @@
 
 本文件记录每个版本的变更。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.2] - 2026-10-05
+
+### 修复
+
+- **详情抽屉滚不动。** `.sm-insp-body` 在渲染时被嵌进了 `.sm-insp-head` 内部,而不是与它平级 ——
+  一个放错位置的括号让正文失去了 flex 父级,因此从未被赋予高度:实测 `clientHeight` 与
+  `scrollHeight` 都是 5862px(即内容全长),超出面板的部分被裁掉,`overflow-y: auto` 形同虚设。
+  把头部先闭合即可恢复。这个缺陷自首个版本起就存在。
+
+### 变更
+
+- README 的安装说明同样适用于发布说明,Release 正文现在包含 **界面安装** 与 **命令行安装** 两种方式。
+
 ## [1.0.1] - 2026-10-05
 
 **插件行为没有变化。** 这次发布只是把仓库里已有的文档与配置标记成一个版本。
@@ -51,5 +64,6 @@ MIT。面板中的技能来自 SkillHub,由各自作者发布,**版权归原作�
 
 本项目的更新日志以中文撰写。英文发布说明见每个 GitHub Release 页面。
 
+[1.0.2]: https://github.com/montersy123/dsh-skill-market/releases/tag/v1.0.2
 [1.0.1]: https://github.com/montersy123/dsh-skill-market/releases/tag/v1.0.1
 [1.0.0]: https://github.com/montersy123/dsh-skill-market/releases/tag/v1.0.0
