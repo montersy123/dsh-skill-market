@@ -54,21 +54,30 @@ const isPlainJs = readFileSync(join(pkgDir, 'lib', 'index.js'), 'utf8').includes
 check(isPlainJs, 'lib/index.js is already ESM source, so a git install needs no build')
 
 // ── licensing and repository metadata, which the registry page shows ──
-// Apache-2.0 rather than MIT: it carries an explicit patent grant and contribution terms, which MIT does not
-// address at all. The checks below are written against Apache's shape — the appendix names the copyright holder
-// as `Copyright <year> <name>`, without the `(c)` that MIT uses.
-check(manifest.license === 'Apache-2.0', 'license is Apache-2.0')
+// MIT, matching the other plugins in this ecosystem. The checks below are written against MIT's shape: the
+// copyright line reads `Copyright (c) <year> <name>`. A licence that only covers this plugin's own code is the
+// point worth asserting — the skills it installs belong to their authors and are covered by their own licences.
+check(manifest.license === 'MIT', 'license is MIT')
 const licensePath = join(root, 'LICENSE')
 check(existsSync(licensePath), 'a LICENSE file exists at the repository root')
 if (existsSync(licensePath)) {
   const license = readFileSync(licensePath, 'utf8')
-  check(license.includes('Apache License') && license.includes('Version 2.0, January 2004'),
-    'the LICENSE file is the Apache License 2.0 text')
-  // The appendix placeholder must have been filled in: shipping the literal `[yyyy] [name of copyright owner]`
-  // leaves the copyright holder unnamed, which is the one field Apache's instructions ask you to complete.
-  check(license.includes('[yyyy]') === false, 'the appendix placeholder was replaced')
-  check(/Copyright \d{4} /.test(license), 'the LICENSE carries a copyright line')
+  check(license.startsWith('MIT License'), 'the LICENSE file is the MIT text')
+  // The permission and warranty clauses, so a partial paste cannot pass as the whole licence.
+  check(license.includes('Permission is hereby granted, free of charge'), 'the grant clause is present')
+  check(license.includes('THE SOFTWARE IS PROVIDED "AS IS"'), 'the warranty disclaimer is present')
+  check(/Copyright \(c\) \d{4} /.test(license), 'the LICENSE carries a copyright line')
   check(license.includes(manifest.author ?? '@@none@@'), 'the LICENSE names the package author')
+}
+// The licence boundary is documented, not only implied: the skills are third-party content, and the README plus
+// the notices file must say so. Without this the package reads as though it were the origin of what it installs.
+for (const file of ['README.md', 'README.en.md', 'THIRD-PARTY-NOTICES.md']) {
+  const path = join(root, file)
+  check(existsSync(path), `${file} exists`)
+  if (existsSync(path)) {
+    const text = readFileSync(path, 'utf8')
+    check(/SkillHub|skillhub/.test(text), `${file} names SkillHub as the source of the skills`)
+  }
 }
 check(typeof manifest.repository?.url === 'string', 'repository.url is set')
 check(typeof manifest.homepage === 'string', 'homepage is set')

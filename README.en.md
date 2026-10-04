@@ -1,7 +1,7 @@
 # dsh-skill-market
 
 [![GitHub stars](https://img.shields.io/github/stars/montersy123/dsh-skill-market?style=social)](https://github.com/montersy123/dsh-skill-market)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Install from GitHub](https://img.shields.io/badge/install-github%3Amontersy123%2Fdsh--skill--market-181717?logo=github)](https://github.com/montersy123/dsh-skill-market)
 
 **A skill market for DeepSeek Harness: browse the skills on [SkillHub](https://skillhub.cn/skills?sortBy=score) and install them into Harness for real.**
@@ -121,8 +121,8 @@ Every skill in the panel comes from **[SkillHub](https://skillhub.cn)**. Thanks 
 each author who publishes there. This plugin only makes those skills easier to find and install from inside Harness.
 
 - **Copyright in each skill belongs to its author**, and each skill is governed by whatever licence it declares (the
-  `license` field in its own `SKILL.md`). **This repository's Apache-2.0 applies to this plugin's own code only,
-  never to any skill.**
+  `license` field in its own `SKILL.md`). **This repository's MIT applies to this plugin's own code only, never to
+  any skill.**
 - **Installing downloads from upstream, at that moment.** This project does not host, mirror, relicense or resell
   any skill content. The `files` whitelist in `package.json` is `lib`, `locale`, `icon.svg`, `cordis.patch.yml` and
   the two READMEs; the captured responses under `tests/` are test data and are never published.
@@ -140,10 +140,7 @@ each author who publishes there. This plugin only makes those skills easier to f
 
 ## License
 
-[Apache License 2.0](LICENSE) © 2026 montersy123
+[MIT](LICENSE) © 2026 montersy123
 
-Apache-2.0 rather than MIT because it carries an explicit **patent grant** and **contribution terms**, neither of
-which MIT addresses.
-
-**That licence covers this plugin's code only, not any skill.** See [NOTICE](NOTICE) for the third-party content
-statement.
+**That licence covers this plugin's code only, not any skill.** Copyright and licensing of the skills is described
+in the section above and in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

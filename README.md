@@ -1,7 +1,7 @@
 # dsh-skill-market
 
 [![GitHub stars](https://img.shields.io/github/stars/montersy123/dsh-skill-market?style=social)](https://github.com/montersy123/dsh-skill-market)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Install from GitHub](https://img.shields.io/badge/install-github%3Amontersy123%2Fdsh--skill--market-181717?logo=github)](https://github.com/montersy123/dsh-skill-market)
 
 **DeepSeek Harness 的技能市场:浏览 [SkillHub](https://skillhub.cn/skills?sortBy=score) 上的技能,并把它们真的装进 Harness。**
@@ -110,7 +110,7 @@ npm test                                  # 整套自检(29 项)
 
 面板里的技能**全部来自 [SkillHub](https://skillhub.cn)**。感谢平台的维护者,以及在上面发布技能的每一位作者。本插件只是让你在 Harness 里更方便地找到并安装它们。
 
-- **技能版权归原作者所有**,以每个技能自己声明的许可证(其 `SKILL.md` 中的 `license` 字段)为准。**本仓库的 Apache-2.0 只适用于本插件自身的代码,不适用于任何技能。**
+- **技能版权归原作者所有**,以每个技能自己声明的许可证(其 `SKILL.md` 中的 `license` 字段)为准。**本仓库的 MIT 只适用于本插件自身的代码,不适用于任何技能。**
 - **安装时从上游实时下载。** 本仓库不托管、不镜像、不转授权、不转售任何技能内容。`package.json` 的 `files` 白名单只包含 `lib`、`locale`、`icon.svg`、`cordis.patch.yml` 与两份 README;`tests/` 下的响应样本是测试数据,不会随包发布。
 - **本插件处理的是索引元数据** —— 名称、简介、版本、下载量、收藏数、分类、第三方安全扫描结论与文件清单,以及你在安装前主动点开某个文件时按需取回的那一份文本。这些只用于展示与识别技能,并附带回原始页面的链接。
 - **SkillHub 及其标识归各自所有者所有。** 本插件是独立的社区项目,与 SkillHub、腾讯及 DeepSeek **均无隶属、赞助或背书关系**。
@@ -119,8 +119,6 @@ npm test                                  # 整套自检(29 项)
 
 ## 许可
 
-[Apache License 2.0](LICENSE) © 2026 montersy123
+[MIT](LICENSE) © 2026 montersy123
 
-选择 Apache-2.0 而不是 MIT,是因为它包含**明确的专利授权**与**贡献者条款**,MIT 对这两件事都没有涉及。
-
-**该许可仅覆盖本插件的代码,不覆盖任何技能。** 第三方组件的说明见 [NOTICE](NOTICE)。
+**该许可只覆盖本插件的代码,不覆盖任何技能。** 技能的版权与许可归属见上一节,以及 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
