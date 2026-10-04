@@ -1,0 +1,4 @@
+# @montersy123/dsh-skill-market bundle patch — inserts the plugin row into the profile stack.
+- insert:
+    - id: skill-market
+      name: '@montersy123/dsh-skill-market'

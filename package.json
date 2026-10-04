@@ -1,0 +1,73 @@
+{
+  "name": "@montersy123/dsh-skill-market",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Browse, search and install SkillHub skills inside DeepSeek Harness. / 在 DeepSeek Harness 内浏览、搜索并安装 SkillHub 技能。",
+  "type": "module",
+  "license": "MIT",
+  "author": "montersy123",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/montersy123/dsh-skill-market.git"
+  },
+  "homepage": "https://github.com/montersy123/dsh-skill-market",
+  "bugs": {
+    "url": "https://github.com/montersy123/dsh-skill-market/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "skill",
+    "skillhub",
+    "marketplace"
+  ],
+  "icon": "./icon.svg",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json",
+    "./lib/locale.js": "./lib/locale.js",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "lib",
+    "locale",
+    "icon.svg",
+    "cordis.patch.yml",
+    "README.md",
+    "README.en.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "install:plugin": "node scripts/install-plugin.mjs --apply",
+    "test": "node scripts/run-checks.mjs",
+    "check:publish": "node scripts/publish-check.mjs",
+    "check:render": "node scripts/verify-render.mjs",
+    "check:i18n": "node scripts/i18n-remaining.mjs && node scripts/i18n-key-audit.mjs && node scripts/locale-check.mjs"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-layout"
+      ]
+    }
+  },
+  "meta": {
+    "title": "技能市场",
+    "description": "在 Harness 内浏览、搜索并安装 SkillHub 技能，支持分类筛选、详情查看、启停与本地导入。"
+  }
+}

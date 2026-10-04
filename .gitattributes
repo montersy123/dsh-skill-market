@@ -1,0 +1,16 @@
+# Force LF in the repository, on every platform.
+#
+# This is not cosmetic. Several checks compare generated content byte for byte — `inline-client-locale.mjs
+# --check` regenerates the locale block and compares it with what is on disk, and `pack-encoding-check.mjs`
+# compares the packed locale files with the source. With Windows' usual `core.autocrlf=true`, a checkout
+# rewrites LF to CRLF in the working copy, so those comparisons fail for a reason that has nothing to do with
+# the code, and only on some machines.
+* text=auto eol=lf
+
+# Binary or generated content that must not be touched at all.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.tgz binary
