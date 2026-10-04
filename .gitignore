@@ -15,6 +15,13 @@ scripts/dist/
 # never to the repository — the plugin resolves it outside the package for exactly that reason.
 data/
 
+# Scratch used to pass a multi-line commit message to `git commit -F`. `git add -A` picks these up, and it
+# happened twice: the file was committed with the change it described, then had to be removed in a follow-up.
+# Ignoring the shape means the mistake cannot recur.
+.commit-message
+commit-msg.txt
+COMMIT_EDITMSG
+
 # Editor and OS noise
 .DS_Store
 Thumbs.db
