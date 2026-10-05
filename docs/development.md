@@ -290,7 +290,7 @@ Host 报告的是清单响应里的 `version`,也就是**真正写下去的那�
 
 ## 运行时状态必须放在包外
 
-启用 = 在 `$DSH_HOME/skills`；停用 = 在 **`<profile>/@montersy123-dsh-skill-market/data/disabled`**。
+启用 = 在 `$DSH_HOME/skills`；停用 = 在 **`<profile>/@montersy123-dsh-skill-market/data/skills`**。
 所以**任何动文件的操作都必须用同一套定位规则**，否则两边会各说各话：
 
 | 操作 | 行为 |
@@ -324,9 +324,9 @@ Host 报告的是清单响应里的 `version`,也就是**真正写下去的那�
 `@montersy123/dsh-skill-market` 把分隔符压平，所以这个目录能直接追溯到拥有它的包，既不会与别的
 发布者冲突，也不会多出一层只为装一个子目录而存在的嵌套。
 
-### 历史布局迁移
+### 目录名的历史，以及为什么现在**不做**兼容
 
-状态位置搬迁过多次：
+存放停用技能的目录搬过多次、也改过一次名：
 
 ```
 $DSH_HOME/skill-market/disabled                    （初版）
@@ -335,14 +335,30 @@ $DSH_HOME/skill-market/data/disabled               （搬出包外）
 <profile>/@montersy123/skill-market/data/disabled  （profile 级，嵌套式）
 <profile>/montersy123/skill-market/data/disabled   （纯用户名的中间形态）
 <profile>/@montersy123-skill-market/data/disabled      （发布者+插件）
-<profile>/@montersy123-dsh-skill-market/data/disabled （现在，用包名）
+<profile>/@montersy123-dsh-skill-market/data/disabled  （用包名）
+<profile>/@montersy123-dsh-skill-market/data/skills    （现在：skills）
 ```
 
-每一处旧位置都会被 **adopt**，否则旧版停用的技能会因为「新位置没有它」而被静默重新启用。读取
-顺序是旧的在前、目标已有的名字跳过，所以冲突时**新副本胜出**；搬空的目录会连空壳一起 walk-up
-删除 —— 一个看着像状态、实则空的目录比没有目录更糟。
+这些位置**现在都不再被收养**。目录名已经定下来（`data/skills`），代码只读这一个目录，旧名字下
+留下的目录就是「没人读的另一个目录」—— 面板既不会列出它，也不会把它搬过来。这样做是有意的：
+`disabled` 作为**目录名**既不直观、也不说明里面装的是什么，留着它做兼容等于让旧名字长期活在代码里。
 
-### `data/` 与 `data/disabled` 都常驻，不清理
+**改的只是目录名。** 面板里的「启用 / 停用」、`enabled` / `disabled`、`/installed` 返回的
+`disabledRoot`、日志里那句 `enabled|disabled` —— 这些**状态词一个都没动**。它们说的是技能是开
+还是关，和文件放在哪个目录无关。
+
+代价说清楚：**从旧版本升上来、且当时有停用技能的人，需要自己把 `<data>/disabled/*` 挪进
+`<data>/skills/`**，否则那些技能在面板里不显示（文件还在磁盘上，没被删）。作者本人的数据由
+作者自行清理，这条路径不再有代码维护。
+
+名字只来自 `PARKED_DIRECTORY`（`lib/index.js` 顶部）一个常量：`ensureStateTree()`、扫描、启停
+都从它取，改一处就够。`installed-copy-check.mjs` 钉住它等于 `skills`，并钉住代码里**没有**任何
+旧的目录名；`disabled-target-check.mjs` 则断言旧名字下的目录**不会被**收养，防止它悄悄回来。
+
+**版本记录（`installed.json`）仍然收养**：它决定面板能不能说出「这个技能装的是哪一版」，和目录
+叫什么名字无关。它自己的历史位置见 `migratePluginData()` 的注释。
+
+### `data/` 与 `data/skills` 都常驻，不清理
 
 两个目录**永久存在**，不会因为变空而被删。早先的实现在没有停用技能时会删掉整个 `data/`，于是
 这棵树随「当前有没有东西被停用」出现和消失 —— 既吵闹，也因为版本记录就在同一个目录里，离
@@ -353,10 +369,88 @@ $DSH_HOME/skill-market/data/disabled               （搬出包外）
 
 `ensureStateTree()` 在激活时、以及每次安装后都会补建，所以全新安装也立刻拥有完整的树。
 
-`disabled-target-check.mjs` 的 30 条断言锁住这组行为，其中一条**真的把包目录删掉再重建**，然后
-断言停用的技能与它的版本记录依然在 —— 验证的是性质，不是路径字符串。
+`disabled-target-check.mjs` 的 38 条断言锁住这组行为，其中一条把状态根**真的搬到另一个位置**再
+读回来，断言停用的技能与它的版本记录依然在 —— 验证的是性质，不是路径字符串。（这条断言此前是
+假的：override 指的是**技能根**、数据根由它按兄弟目录推导出来，而当时的脚本只把目录复制到一个
+随机临时目录再改 override，于是插件读的还是原来那份数据，断言无论如何都会通过。现在搬迁按真实
+布局嵌套，并且额外断言数据根**确实**变了。）
 
-## 两个必须结构性防住的工具坑
+### 面板自己的状态也在这个目录里：`data/panel.json`
+
+浏览器半（面板）的持久化状态——收藏（id 数组 + 完整记录）、已安装账本、类目偏好、待重启提示
+——同样放在 `<profile>/@montersy123-dsh-skill-market/data/panel.json`，与 `installed.json`、
+`skills/` 并列。
+
+它以前放在页面的 **Web Storage** 里。那个存储**不是本插件的**：桌面端下它是
+`%APPDATA%\@deepseek-ai\dsh-desktop\Local Storage` 下的一个 LevelDB，与 DSH 自己的键、以及
+每个别的插件**共用一份**，按 **origin** 而不是按插件寻址。于是插件的数据躺在 DSH 的数据里、
+卸载插件不会带走它、用户也找不到自己的收藏去了哪。私有目录没有这些问题：按 profile 隔离、
+换包不丢、可以被用户查看/备份/删除。
+
+| 端点 | 作用 |
+|---|---|
+| `GET /skill-market/api/state` | 返回 `{ state, revision, harnessStartedAt }`；文件不存在时 `state: null` |
+| `POST /skill-market/api/state` | 整份文档覆盖写入；body 必须是 JSON 对象，上限 4 MiB |
+
+三个实现细节：
+
+- **写入是原子的，并且会重试。** 先写 `panel.json.tmp` 再 `rename`：半截的 JSON 是这份文档唯一
+  无法恢复的故障——丢的不是最后一次改动，而是全部收藏。Windows 上"替换一个别人正开着的文件"
+  会以 `EPERM`/`EACCES`/`EBUSY` 失败（杀毒、备份、索引器恰好看了一眼那个文件），所以 rename
+  带重试，与停用库搬运同一个理由，也是同样**实测**出来的：`EPERM: operation not permitted,
+  rename` 让存储落后了一次改动。写入还串行化（`panelWriteChain`），两个请求不会抢同一个临时文件。
+- **`revision` 用文件 mtime**，读写两侧报的是同一个数，所以客户端能区分「没变」与「别的窗口
+  写过」。这取代了 `localStorage` 的 `storage` 事件：文件不会自己通知任何人，所以面板在挂载、
+  窗口重新获得焦点、以及每 10 秒（`PANEL_SYNC_INTERVAL_MS`）问一次 Host。
+- **读取在渲染前，写入立刻发。** `readState()` 是在首次渲染里调用的，渲染不能 await 请求，
+  所以文档在内存里有一份副本（`panelDocument`），读是同步的，写是"改内存 + 立即 POST"。
+  **在 hydration 完成之前拒绝一切写入**——先写会把文件覆盖成本页的默认值，那是数据丢失而不是
+  可以容忍的竞态；挂载对账也 await 同一个 promise，否则 Host 的 `/installed` 答复会被它本该
+  纠正的账本覆盖。
+
+> 写入**曾经**延后一个 tick（想把一次操作产生的两处改动合成一个请求）。实测证明不划算：
+> 合并本来就会发生（写入在途时第二次调用只标脏，在途的循环会重发最新的文档），而定时器
+> 带来的是**一个改动还没落盘的时间窗口** —— 第一次跑集成检查就在这里丢了 pending。
+> `localStorage` 当年是同步写的，换成文件没有理由开始丢最后一次改动。
+
+> **迁移**：`dsh-skill-market/v1` 与 `dsh-skill-market/pending/v1` 这两个 Web Storage 键由
+> `hydratePanelState()` **读一次**（文件不存在时采用它们），随后**删除**。删掉它们是这次搬迁的
+> 目的本身，而不是顺手清理。文件已经存在时以文件为准——它是更新的那份权威。
+
+> **删除必须发生在写入落盘之后。** 第一版是在采用旧数据的同一个函数里就把键删了，于是
+> "新 client + 旧 Host"（Host 半还没有 `/state` 路由，客户端却被热更新了）这种组合会：
+> 读到旧数据 → 删掉旧键 → POST 404 → **数据没有任何地方可存**。这不是假设，它真的发生了：
+> 收藏只能从 LevelDB 的 write-ahead log 里把最后一条 `Put` 捞回来，日志里 `seq=1893`/`1902`
+> 两条 DELETE 就是那次事故。捞回来的工具留在
+> [`../scripts/dev/recover-panel-state.mjs`](../scripts/dev/recover-panel-state.mjs)：它把 LevelDB
+> 日志格式与 Chromium Local Storage 的取值编码写下来了，重写一遍等于把这两件事重新推一遍。
+>
+> 现在的顺序是：采用 → 写入 → **写入成功才删**。并且当写入失败时（旧 Host、请求出错），把
+> 文档按旧格式写回 Web Storage 作为**救生副本**（`writeLegacyStorage()`）——新家暂时用不了，
+> 丢掉用户的收藏比多写一次旧家更糟；副本会在下一次成功写入时连同旧键一起消失。
+> `legacy-saved-check.mjs` 用例 5 专门驱动"Host 拒绝写入"，断言旧键仍在、救生副本里有收藏、
+> 面板照常渲染。
+>
+> 两份副本同时存在时（页面还跑着旧 client，直到它被关掉）**收藏取并集**，其余以文件为准：
+> 账本、`enabled` 是 Host 推导出来的缓存，类目是偏好，而收藏是只有用户能创造的东西——
+> 把用户在另一个窗口刚收藏的技能丢掉，比偶尔复活一个他刚取消的收藏更糟（`mergeFavorites()`，
+> 用例 6）。
+>
+> **记录只在收藏列表还点得到它时才保留。** `saved` 是要渲染的 id 列表，`savedSkills` 是让它
+> 渲染得出来的记录——两者是一件事。旧版本可能删了 id 却留下记录，于是它永远躺在文件里：面板
+> 不显示、代码不引用，只有打开文件的人才看得见。`sanitizePersisted()` 在每次读取时清掉这种
+> 孤儿记录，并因此把文件重写一遍（用例 7）。
+
+`legacy-saved-check.mjs` 的用例 3/4/5 锁住这段迁移（采用后仍完整、旧键被删、文件优先、
+Host 拒绝写入时**不删**且留救生副本），
+`panel-sync-check.mjs` 锁住跨窗口那条路（焦点同步采用别的窗口写的文档、且**不会**写回去），
+`route-check.mjs` 从真实 HTTP 上锁住路径与上限，而 `panel-live-check.mjs` 把**面板与真实的
+Host 半**接到一起跑（两个桩各自都对、协议却对不上，是只有这种检查能抓到的一类缺陷 —— 它当场
+抓到了上面那条 `EPERM` 重试与丢失的写入）。`render-panel.mjs` 现在完全不需要 Web Storage
+了 —— 连 `dsh-app://app/`（jsdom 里没有 `localStorage` 的自定义 scheme）也能原样渲染，这正是
+这次搬迁的直接结果。
+
+## 必须结构性防住的工具坑
 
 **① 测试脚本绝不能写真实技能目录。** `DSH_SKILL_MARKET_ROOT` 在 `import` **之后**赋值是**无效的**
 —— ES import 会被提升到赋值之前，于是脚本以为自己在沙箱里，实际动的是用户的真实目录。后果实测过：
@@ -388,6 +482,13 @@ node ../scripts/which-version.mjs <handle> <slug>             # 只读：逐文�
 
 `../scripts/css-literal-check.mjs` 因此常驻验证流程：它定位样式表模板、检查体内**没有**残留反引号、
 并确认规则数量在合理范围（少于 100 条就说明被截断了）。
+
+**④ 绝不要用 PowerShell 的 `Get-Content` / `Set-Content` 改动文本文件。** Windows PowerShell 5.1
+的 `Get-Content` 默认按**系统 ANSI 代码页**解码，而这个仓库的文件是 UTF-8：读一次再写回去，中文
+就全变了样（`收藏` → `鏀惰棌`），并且会带上 BOM。实测代价：一条为了改一个词的 `-replace` 让
+ `legacy-saved-check.mjs` 里所有中文断言字符串报废，检查随即以"找不到收藏页签"失败 —— 报错指向
+运行时，而真正的故障在文件编码上。文件内容的编辑一律走编辑器工具（或 `[IO.File]::ReadAllText`
+配显式 `UTF8` 编码），`../scripts/encoding-check.mjs` 会把 BOM 与乱码挡在提交之前。
 
 ## 卡片头部的行布局曾经完全缺失
 
@@ -423,8 +524,8 @@ node ../scripts/which-version.mjs <handle> <slug>             # 只读：逐文�
 ~/.dsh/profiles/desktop/node_modules/@montersy123/dsh-skill-market/   ← 真实目录
 ```
 
-为什么不用 `link:`（早期版本是 junction）：**插件的状态目录在它自己的包内**
-（`<package>/data/disabled`），软链会让这份状态写进源码仓库；而且真实拷贝在
+为什么不用 `link:`（早期版本是 junction）：**插件的状态目录当时在它自己的包内**
+（`<package>/data/disabled`，那份状态如今在 profile 下，见「运行时状态必须放在包外」），软链会让这份状态写进源码仓库；而且真实拷贝在
 `node_modules` 里的位置和别的 bundle 完全一致。
 
 包名是 **scoped** 的（`@montersy123/dsh-skill-market`），这样后续通过 npm 安装时不会
@@ -457,17 +558,22 @@ node ../scripts/install-plugin.mjs --apply   # 打包 → pnpm add file:<tgz> �
 改 `lib/client.js` 后由 `dsh-hmr` 把新的 bundle revision 推给已打开的页面；
 改 `lib/index.js`（Host 半）则需要重启 App。
 
-> **改名时不要动 `localStorage` 的键**。`dsh-skill-market/v1` 和
-> `dsh-skill-market/pending/v1` 是用户机器上的持久化身份，跟着包名一起改会让已收藏的
-> 技能和已加载的账本凭空消失。`id`（`window.__ModuleLoader__.load` 的那个）则**必须**
-> 等于包名，内核是按包来解析这个注册的。
+> **改名时不要动这两个 Web Storage 键**：`dsh-skill-market/v1` 和 `dsh-skill-market/pending/v1`
+> 是**旧版**在用户机器上留下的身份，`hydratePanelState()` 靠它们一次读取把老数据搬进文件；
+> 跟着包名一起改会让已收藏的技能和已加载的账本凭空消失。搬迁完成后它们不再被写入，只在这一次
+> 读取后删除。`id`（`window.__ModuleLoader__.load` 的那个）则**必须**等于包名，内核是按包来
+> 解析这个注册的。
 
-### 哪些进 `localStorage`，哪些不进
+### 面板状态存哪、存什么
+
+（存的是 `data/panel.json`，见前面「面板自己的状态也在这个目录里」。）
 
 | 状态 | 是否持久化 | 理由 |
 |---|---|---|
 | `installed` / `saved` / `savedSkills` / `enabled` | **是** | 用户的数据，重载后必须还在 |
-| `category` / `sortBy` | **是** | 描述的是**偏好** —— 改变列表显示什么，而不是显示哪个列表 |
+| `category` | **是** | 描述的是**偏好** —— 改变列表显示什么 |
+| `pending`（待重启提示） | **是** | 刷新后仍要提示，重启后必须消失 —— 见下 |
+| `sortBy` | **否** | 进入发现应当永远是默认顺序，否则首屏取决于一个看不见的旧选择 |
 | `view`（发现 / 已安装 / 收藏 / 本地导入） | **否** | 从侧边栏进来应当落在**发现**，而不是上次离开的地方 |
 | 本地导入的技能 | **否（也不该）** | 它在磁盘上，由 Host 扫描得出 —— 见下 |
 
@@ -485,7 +591,9 @@ Host 里本地导入的路由                            → 不存在
 ```
 
 于是面板列出一个**在任何地方都不存在**的技能：没写进 `$DSH_HOME/skills`，注册表里没有，
-模型调不到，而且那行只活在**同一个浏览器的 localStorage** 里 —— 换 profile、清缓存就消失。
+模型调不到，而且那行只活在**同一个浏览器的 Web Storage** 里 —— 换 profile、清缓存就消失。
+（那次实现正是把面板状态放进 Web Storage 的最初原因；现在它落在插件自己的
+`data/panel.json` 里，但"列表要有磁盘上的东西撑着"这条结论没有变。）
 `version` 甚至是硬编码的 `0.1.0`，启用开关只改一个布尔值。
 
 现在它是真的：
@@ -632,6 +740,16 @@ node ../scripts/inline-client-locale.mjs --check
 （安装 → 已安装列表 → 收藏 → 本地导入 → 详情四个 tab），以及 `structure` 断言：
 页头 / 排序 / chips 必须在 `.sm-fixed` 里，卡片网格必须在 `.sm-content` 里，反向出现即报 false。
 jsdom 没有排版引擎，**横向溢出和实际列数必须在真实页面里确认**（列数用第 4 条推算）。
+它现在**不需要 Web Storage**（面板状态走 Host 的 `/state` 路由），所以
+`PANEL_PAGE_URL=dsh-app://app/` 也能原样跑 —— 那是桌面端真实 origin，jsdom 在那里没有
+`localStorage`。
+
+`node ../scripts/run-checks.mjs` 会把上面全部（含 `legacy-saved-check` /
+`restart-advice-check` / `panel-sync-check` / `panel-live-check` / `route-check`）按顺序跑一遍
+并按退出码汇总。其中 `panel-live-check.mjs` 是唯一把**面板与真实 Host** 接起来跑的一条：它把
+`lib/index.js` 挂到真实 HTTP 服务器上，再在 jsdom 里装载 `lib/client.js`，只把上游
+`api.skillhub.cn` 换成 fixture —— 于是"客户端发的形状"与"Host 认的形状"是互相验证的，
+而不是各自对着桩自证。
 
 ## 国际化（中英双语）
 
@@ -787,28 +905,32 @@ Playwright MCP 浏览器自动化。这是发布方的问题，Harness 会忽略
 但意味着**提示只存在于 toast 与横幅里**，没有行内「待生效」标签可依附 —— 所以那一句必须出现在 toast 上。
 
 `render-panel.mjs` 断言的是四件事：toast 提到重启、toast 点名了技能、横幅计数 +1、
-以及待生效集合真的写进了 `localStorage`（含被卸载技能的目录名）。
+以及待生效集合真的写进了存储（含被卸载技能的目录名）。
 
-### 提示的有效期：用两个 storage 分别表达「刷新」与「新会话」
+### 提示的有效期：以 **Host 进程的启动时间** 为界
 
 第一版把待生效集合只写进 `localStorage`，于是**重启后提示还在** —— `localStorage`
-恰恰是**跨重启存活**的，而它请求的那次重启已经发生了。想要的有效期其实是
-「直到本次浏览会话结束」，而 `sessionStorage` 量的正好是这个：**刷新保留、关窗即清**。
+恰恰是**跨重启存活**的，而它请求的那次重启已经发生了。当时的修法是用
+`sessionStorage` 补一个标记，把"有效期"近似成"本次浏览会话"：刷新保留、关窗即清。
+那是个**替身**——`localStorage` 分不清刷新与重启，而"窗口"是当时能拿到的最接近的东西。
 
-所以 `PENDING_KEY` 这个名字**故意用在两个 storage 上**：
+现在这份文档在文件里，可以记下真正的判据：**做出改动时那个 Host 进程的启动时间**。
+`GET/POST /state` 每次都返回 `harnessStartedAt`（`Date.now() - process.uptime()`，进程内恒定），
+`writePending()` 把它写进 `pending.since`：
 
-| storage | 存什么 | 语义 |
+| 场景 | `since` 与当前 Host | 结果 |
 |---|---|---|
-| `localStorage` | 待生效的目录名数组 | 负载：刷新后仍要提示 |
-| `sessionStorage` | 一个 `'pending'` 标记 | 本次浏览会话就是做出改动的那一次 |
+| 刷新页面 | 相同 | 继续提示 —— 改动对当前对话仍未生效 |
+| 关窗再打开（Host 未重启） | 相同 | 继续提示 —— 它请求的重启**确实**还没发生 |
+| 重启 Harness | 不同 | 提示消失，并把陈旧的 `dirs` 从文件里清掉 |
 
-`readPending()` 先看 `sessionStorage` 标记：没有标记 → 判定为**新窗口（重启已完成）**，
-顺手把 `localStorage` 里的陈旧负载删掉并返回空集；有标记 → 读负载继续提示。
-`writePending()` 在集合清空时把**两个** storage 一起清掉。
+这比"新窗口"更诚实：边界是提示**真正关心的那个事件**，而不是一个代理。唯一的行为差异是
+"只关窗、不重启 Harness"现在仍然提示 —— 那正是实情（正在运行的对话仍持有旧的技能目录）。
 
-`tools/restart-advice-check.mjs` 把三种生命周期都钉住了：改动后出现两个标记 → 刷新
-（两个 storage 都在）仍显示 → 新窗口（只有 `localStorage`）不显示**且负载被清除**。
-只用一个 storage 的写法会挂在第三种情况上，这正是那个 bug。
+`readPending()` 在读的时候也做一次同样的判定（hydration 已经清过一次，这是第二道），
+`writePending()` 在集合清空时把 `pending` 归零。`../scripts/restart-advice-check.mjs`
+把三种生命周期钉住：改动后记录到当前 Host 时间 → 同一个 Host 重载仍显示 →
+Host 启动时间变晚则消失**且文件被清干净**。
 
 > 这段文案改过一次没生效，原因值得记：用户说的是**横幅**，我只改了 **toast**。
 > 两个地方各写一份同样的字，就会各错一次。
@@ -821,8 +943,8 @@ Playwright MCP 浏览器自动化。这是发布方的问题，Harness 会忽略
 
 ## 本地账本要在挂载时对齐 Host
 
-面板把「已安装」清单存在 `localStorage`，它是**缓存**，所以会以面板不该展示的方式过期：
-旧安装根目录写下的路径、上一版本的文件数、在面板之外被删掉的技能。
+面板把「已安装」清单存在 `data/panel.json`（以前是 `localStorage`），它是**缓存**，所以会以
+面板不该展示的方式过期：旧安装根目录写下的路径、上一版本的文件数、在面板之外被删掉的技能。
 
 挂载时 `GET /skill-market/api/installed` **以 Host 为准**校正：按目录名匹配、采用 Host 的
 `directory` / `name` / `files` / `bytes` / `installedAt` / `origin`，并把 Host 已不认识的条目丢掉。
@@ -852,7 +974,7 @@ Playwright MCP 浏览器自动化。这是发布方的问题，Harness 会忽略
 | 复制到 | 含义 | 面板与注册表 |
 |---|---|---|
 | `$DSH_HOME/skills/` | **已启用** | 下一次 `sync()` 就发现并注册，无需重启 |
-| `<state>/data/disabled/` | **已停用** | 被发现，但不会出现在实时目录里 |
+| `<state>/data/skills/` | **已停用** | 被发现，但不会出现在实时目录里 |
 
 要求的正是这两条语义。`skills-provider-check.mjs` 的 5b 节专门断言它：手工写入技能根 → 被发现
 且 `enabled === true` 且当场可用；手工写入停用库 → 被发现且 `enabled === false` 且不注册。
@@ -965,7 +1087,7 @@ SkillHub —— 发布者、版本历史、文件清单、安全扫描 —— �
 （`CON`/`NUL`/`COM1`…），以及**结尾的点或空格**（Windows 会静默去掉它们，于是实际指向另一个文件）。
 `disabled-target-check.mjs` 对含点目录断言能来回启停，并对 10 个应当拒绝的名字逐个断言。
 
-面板侧还有一半：这类技能在 `localStorage` 里**没有账本记录**，所以它能否显示取决于对账是否
+面板侧还有一半：这类技能在存储里**没有账本记录**，所以它能否显示取决于对账是否
 **由 Host 的答复重建**（见上一节）。只打补丁的实现会让它永远不出现。`render-panel.mjs` 断言
 `handCopiedAppears` / `handCopiedChecked` / `handCopiedOnImportPage`（徽章为「手动放置」），
 同一个目录名换到停用库后 `handParkedShowsDisabled` 必须反转。
@@ -1134,7 +1256,8 @@ jsdom 不会通过 `getComputedStyle` 解析样式表，所以断言的是承载
 `sectionHeadText`（下面那节删掉的东西确实没了、数量确实来自 API）。
 `../scripts/legacy-saved-check.mjs` 覆盖**旧格式 store**（只有 `saved`、没有 `savedSkills`）的
 两个用例：目录里确实没有那个 id 时 —— 不渲染、显示空状态、清理存储、给出提示、无 React 报错；
-目录里有那个 id 时 —— 正常渲染且**不被误删**。
+目录里有那个 id 时 —— 正常渲染且**不被误删**。另外两个用例（3/4）覆盖状态从 Web Storage
+搬进 `data/panel.json` 的那次迁移，见前面「面板自己的状态也在这个目录里」。
 
 ## 懒加载（列表不再停在第一页）
 

@@ -25,6 +25,48 @@ const checks = [
   ['creates the state tree', (host) => host.includes('ensureStateTree')],
   ['no longer prunes state', (host) => host.includes('pruneEmptyDataRoot') === false],
   ['state dir is the package name', (host) => host.includes("'@montersy123-dsh-skill-market'")],
+  // The disabled skills live in the plugin's own store, beside the install record, and the store is
+  // read under that one name: no older spelling is kept, so no directory but `skills` is ever read.
+  ['disabled skills live in data/skills', (host) => host.includes("const PARKED_DIRECTORY = 'skills'")
+    && host.includes('join(pluginDataRoot(), PARKED_DIRECTORY)')],
+  // `disabled` must survive only as the *state* of a skill — the log line and the summary's `disabled`
+  // list say whether a skill is off. It must not survive as a path segment anywhere: `'disabled')` is
+  // what a `join(..., 'disabled')` or a call taking the old directory name looks like, and the
+  // behaviour that a directory under that name is not adopted is pinned by `disabled-target-check`.
+  ['no legacy store name is used as a path', (host) => host.includes("'disabled')") === false
+    && host.includes('LEGACY_PARKED_DIRECTORY') === false],
+  // The panel's own state lives in that same directory as a file, served by this plugin's route.
+  // It used to be `localStorage`, which on the desktop is DSH's LevelDB — one store per user data
+  // directory, shared with DSH's own keys and with every other plugin, and addressed by origin
+  // rather than by plugin. These three assertions are the move: the path, the route, and the
+  // absence of any write to Web Storage, with the legacy keys read once and deleted.
+  ['panel state is a file in the data dir', (host) => host.includes("join(pluginDataRoot(), 'panel.json')")],
+  ['panel state has its own route', (host) => host.includes("suffix === '/state'")],
+  ['advice expires with the Host process', (host, client) => host.includes('HOST_STARTED_AT') && client.includes('harnessStartedAt')],
+  // Web Storage is written by exactly one function, and that function is the rescue copy taken when
+  // the Host cannot store the document. Anywhere else it would be the old store growing back: the
+  // keys are read once, kept only while a write has not landed, and deleted when one has.
+  ['Web Storage is written only by the rescue copy', (host, client) => {
+    const start = client.indexOf('function writeLegacyStorage')
+    if (start < 0) return false
+    const body = client.slice(start, client.indexOf('\n    }', start))
+    const total = (client.match(/localStorage\.setItem/g) ?? []).length
+    const inside = (body.match(/localStorage\.setItem/g) ?? []).length
+    return total > 0 && total === inside
+  }],
+  ['the legacy keys are deleted after a write lands', (host, client) => {
+    // The one failure this ordering exists for: the keys were deleted in the adoption itself, so a
+    // Host that could not store the document left the data with nowhere to live. The behaviour is
+    // pinned by `legacy-saved-check` case 5; this only refuses the shape that caused it, a clear in
+    // the same function that adopts.
+    const hydrate = client.slice(
+      client.indexOf('async function hydratePanelState'),
+      client.indexOf('function panelStateReady'),
+    )
+    return hydrate.includes('panelLegacyClearPending = true')
+  }],
+  ['client deletes the legacy keys', (host, client) => client.includes('removeItem(LEGACY_STATE_KEY)')
+    && client.includes('removeItem(LEGACY_PENDING_KEY)')],
   // These assertions used to match the Chinese text a control rendered, which stopped being a source
   // literal once the panel was translated. They now match the *key* the control renders through, which is
   // the invariant that actually matters: the string moved from the component into the dictionary, and the

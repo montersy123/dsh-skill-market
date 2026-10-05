@@ -51,6 +51,10 @@ const CHECKS = [
   ['node', ['scripts/install-check.mjs']],
   ['node', ['scripts/legacy-saved-check.mjs']],
   ['node', ['scripts/restart-advice-check.mjs']],
+  ['node', ['scripts/panel-sync-check.mjs']],
+  // The panel against the real Host half over real HTTP, so the two halves are checked against each
+  // other and not only against their own stubs.
+  ['node', ['scripts/panel-live-check.mjs']],
   ['node', ['scripts/grid-columns.mjs']],
   ['node', ['scripts/verify-render.mjs']],
   // Runtime contracts from the shipped Harness.

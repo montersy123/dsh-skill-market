@@ -15,6 +15,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
+import { createPanelStateStub } from './dev/panel-state-stub.mjs'
 
 const argv = process.argv.slice(2)
 const flag = (name) => {
@@ -25,16 +26,6 @@ const fixtureDir = flag('--fixture')
 const reactDir = flag('--react') ?? 'scripts/dev/reactsmoke/node_modules'
 const viewport = flag('--viewport') ?? '1280x900'
 const pageUrl = process.env.PANEL_PAGE_URL ?? 'http://127.0.0.1:19387/'
-/**
- * Origin used for the persisted-state checks.
- *
- * `dsh-app://app/` is the real desktop origin, and it is exactly the origin whose
- * relative-URL resolution this harness exists to verify — but jsdom treats a custom
- * scheme as an opaque origin, where `localStorage` throws. So the render still uses
- * the requested URL while the storage round-trip runs against a placeholder copy of
- * the same document, under an origin jsdom can give a store.
- */
-const storageUrl = pageUrl.startsWith('http') ? pageUrl : 'http://127.0.0.1:19387/'
 const [width, height] = viewport.split('x').map(Number)
 
 const thirdPartyRequire = createRequire(pathToFileURL(join(reactDir, 'package.json')).href)
@@ -52,18 +43,12 @@ const dom = new JSDOM('<!doctype html><html><body><div id="host"></div></body></
 })
 const { window } = dom
 
-// jsdom refuses `localStorage` on a custom scheme (an opaque origin), which is
-// exactly the origin the desktop shell serves the page from. The real renderer is
-// Chromium, where a registered scheme does have a store, so the panel's persistence
-// is exercised here against a store borrowed from an http document. This keeps the
-// requested page URL authoritative for the relative-URL and fetch checks.
-if (pageUrl !== storageUrl) {
-  const storeDom = new JSDOM('<!doctype html><html><body></body></html>', { url: storageUrl })
-  Object.defineProperty(window, 'localStorage', {
-    value: storeDom.window.localStorage,
-    configurable: true,
-  })
-}
+// The panel's durable state is a file the Host owns, reached through `GET`/`POST
+// `/skill-market/api/state`, so this harness no longer needs a Web Storage store at all — and in
+// particular no longer needs to borrow one, which is what the `dsh-app://app/` render used to do
+// because jsdom has no `localStorage` on a custom scheme. That the desktop origin now works
+// unchanged is the point of the move, not a convenience of this harness.
+const panelState = createPanelStateStub()
 
 // React DOM resolves the ambient document from the globals, exactly as it does
 // in a browser page, so jsdom's objects must be installed before it is required.
@@ -119,7 +104,7 @@ let importFails = false
  * A skill the Host reports that this browser has never recorded.
  *
  * This is what a directory copied into the skill root by hand looks like from the panel's side:
- * present on disk, absent from `localStorage`. It must appear, and appear enabled.
+ * present on disk, absent from the stored document. It must appear, and appear enabled.
  */
 let handCopiedOnDisk = null
 /** Every `/skill-security` query the panel made, as `<namespace>/<slug>`. */
@@ -133,6 +118,11 @@ window.fetch = async (url, init = {}) => {
     try { parsedBody = JSON.parse(init.body) } catch { parsedBody = init.body }
   }
   requests.push({ target, method, body: parsedBody })
+
+  // The panel's own state, before anything else: its path shares no prefix with the market
+  // endpoints, and the fall-through below answers *any* unmatched GET with the skills fixture.
+  const stateAnswer = panelState.answer(target, method, parsedBody)
+  if (stateAnswer !== null) return stateAnswer
 
   if (method === 'POST') {
     // A local import first: its body is the file itself and its name is a query parameter, so
@@ -197,11 +187,11 @@ window.fetch = async (url, init = {}) => {
       return { ok: false, status: 500, async json() { return { error: answer.reason } } }
     }
     const name = answer?.name ?? slug
-    // A parked skill's files go to the disabled store, and the Host says so. The stub mirrors
-    // that so the panel's switch behaviour can be checked, not just its happy path.
+    // A parked skill's files go to the disabled store — `data/skills` — and the Host says so. The stub
+    // mirrors that so the panel's switch behaviour can be checked, not just its happy path.
     const parked = answer?.enabled === false
     const directory = answer?.directory ?? (parked
-      ? `C:\\Users\\tester\\.dsh\\profiles\\desktop\\node_modules\\@montersy123\\dsh-skill-market\\data\\disabled\\${parsedBody?.namespace}--${slug}`
+      ? `C:\\Users\\tester\\.dsh\\profiles\\desktop\\node_modules\\@montersy123\\dsh-skill-market\\data\\skills\\${parsedBody?.namespace}--${slug}`
       : `C:\\Users\\tester\\.dsh\\skills\\${parsedBody?.namespace}--${slug}`)
     currentInstall = { slug, namespace: parsedBody?.namespace, name }
     return {
@@ -299,7 +289,7 @@ window.fetch = async (url, init = {}) => {
           }]
         return {
           root: 'C:\\Users\\tester\\.dsh\\skills',
-          disabledRoot: 'C:\\Users\\tester\\.dsh\\skill-market\\disabled',
+          disabledRoot: 'C:\\Users\\tester\\.dsh\\profiles\\desktop\\@montersy123-dsh-skill-market\\data\\skills',
           skills: [...market, ...local, ...handCopied],
           disabled: [],
         }
@@ -510,32 +500,32 @@ const panelProps = {
 }
 
 /**
- * Seed the ledger with the 已落盘 path an OLDER install root wrote, right before the
- * first render, so the mount reconciliation has a stale value to correct. Guarded
- * because jsdom has no storage on a custom-scheme origin.
+ * Seed the ledger with the 已落盘 path an OLDER install root wrote, right before the first
+ * render, so the mount reconciliation has a stale value to correct.
+ *
+ * Seeded into the stored document — the file the Host owns — rather than into Web Storage,
+ * because that is where the panel reads its ledger from. Under the desktop origin this now works
+ * unchanged: nothing about the store depends on the page's origin any more.
  */
-try {
-  window.localStorage.setItem('dsh-skill-market/v1', JSON.stringify({
-    view: 'installed',
-    category: 'all',
-    sortBy: 'score',
-    installed: [{
-      id: `@${seedInstall.namespace}/${seedInstall.slug}`,
-      installedAt: Date.now(),
-      version: seedLocalVersion,
-      // The plugin-name-wrapped root this plugin used before it moved to the shared one.
-      directory: `C:\\Users\\tester\\.dsh\\skill-market\\skills\\${seedInstall.namespace}--${seedInstall.slug}`,
-      registeredAs: seedInstall.name,
-      files: 84,
-      bytes: 1027875,
-    }],
-    saved: [],
-    savedSkills: {},
-    enabled: {},
-    imported: [],
-  }))
-} catch {
-  /* no storage on this origin: the reconciliation assertion reports it instead */
+panelState.store.state = {
+  view: 'installed',
+  category: 'all',
+  sortBy: 'score',
+  installed: [{
+    id: `@${seedInstall.namespace}/${seedInstall.slug}`,
+    installedAt: Date.now(),
+    version: seedLocalVersion,
+    // The plugin-name-wrapped root this plugin used before it moved to the shared one.
+    directory: `C:\\Users\\tester\\.dsh\\skill-market\\skills\\${seedInstall.namespace}--${seedInstall.slug}`,
+    registeredAs: seedInstall.name,
+    files: 84,
+    bytes: 1027875,
+  }],
+  saved: [],
+  savedSkills: {},
+  enabled: {},
+  imported: [],
+  pending: { since: 0, dirs: [] },
 }
 
 await act(async () => {
@@ -661,17 +651,7 @@ if (argv.includes('--interactions')) {
   // where the skill actually is.
   interactions.stalePathCorrected = /skill 目录：C:\\Users\\tester\\\.dsh\\skills\\indiv-ebandao--dev-expert/.test(host.textContent ?? '')
   interactions.stalePathGone = /skill-market\\skills\\/.test(host.textContent ?? '') === false
-  interactions.ledgerAfterReconcile = (() => {
-    const key = 'dsh-skill-market/v1'
-    const keys = typeof window.localStorage?.getItem === 'function' ? [key] : []
-    if (keys.length === 0) return null
-    try {
-      const parsed = JSON.parse(window.localStorage.getItem(key) ?? '{}')
-      return parsed?.installed?.[0]?.directory ?? null
-    } catch {
-      return null
-    }
-  })()
+  interactions.ledgerAfterReconcile = panelState.store.state?.installed?.[0]?.directory ?? null
   interactions.installPosts = requests.filter((entry) => entry.method === 'POST' && entry.target.includes('/install'))
     .map((entry) => ({ slug: entry.body?.slug, namespace: entry.body?.namespace }))
 
@@ -705,14 +685,9 @@ if (argv.includes('--interactions')) {
   // entry surviving a refresh used to override the Host, so a skill sitting in the skill root
   // still read as 已停用 — the reason this is checked rather than assumed.
   interactions.enabledMapKeys = (() => {
-    try {
-      const store = JSON.parse(window.localStorage.getItem('dsh-skill-market/v1') ?? '{}')
-      const map = store.enabled ?? {}
-      // Keyed by directory name, so both views can read the same entry.
-      return Object.keys(map).every((key) => key.includes('--')) ? Object.keys(map).sort() : ['(id-keyed!)']
-    } catch {
-      return ['(unreadable)']
-    }
+    const map = panelState.store.state?.enabled ?? {}
+    // Keyed by directory name, so both views can read the same entry.
+    return Object.keys(map).every((key) => key.includes('--')) ? Object.keys(map).sort() : ['(id-keyed!)']
   })()
 
   // After a change the panel offers restart advice — advice only, never a gate.
@@ -759,13 +734,8 @@ if (argv.includes('--interactions')) {
     return years !== null && Number(years[1]) > 1
   })()
   interactions.installedRowHasLedgerTime = (() => {
-    try {
-      const store = JSON.parse(window.localStorage.getItem('dsh-skill-market/v1') ?? '{}')
-      const first = Array.isArray(store.installed) ? store.installed[0] : undefined
-      return Number(first?.installedAt ?? 0) > 946684800000
-    } catch {
-      return false
-    }
+    const first = Array.isArray(panelState.store.state?.installed) ? panelState.store.state.installed[0] : undefined
+    return Number(first?.installedAt ?? 0) > 946684800000
   })()
   // The formatter's own rule, which is what the row depends on: an unusable timestamp produces
   // no label, so the caller can hide the phrase. `0` is the exact value that used to render as
@@ -896,12 +866,8 @@ if (argv.includes('--interactions')) {
   interactions.restartBannerAfterUninstall = host.querySelector('.sm-restart-banner')?.textContent ?? null
   interactions.restartBannerCountsUninstall = /本次改了/.test(interactions.restartBannerAfterUninstall ?? '')
   interactions.pendingAfterUninstall = (() => {
-    try {
-      const raw = window.localStorage.getItem('dsh-skill-market/pending/v1')
-      return raw === null ? null : JSON.parse(raw)
-    } catch {
-      return 'unreadable'
-    }
+    const pending = panelState.store.state?.pending
+    return pending === undefined ? null : (Array.isArray(pending.dirs) ? pending.dirs : 'unreadable')
   })()
   interactions.pendingIncludesUninstalled = Array.isArray(interactions.pendingAfterUninstall)
     && interactions.pendingAfterUninstall.some((name) => String(name).startsWith('indiv-ebandao--'))
@@ -1210,9 +1176,9 @@ if (argv.includes('--interactions')) {
   }
   await openTab('本地导入')
 
-  // A directory copied into the skill root by hand is on disk but absent from `localStorage`. The
-  // Host's answer must be enough for it to appear — and to appear enabled, because the skill root
-  // means on. The panel used to only patch rows it already had, so this skill was invisible.
+  // A directory copied into the skill root by hand is on disk but absent from the stored document.
+  // The Host's answer must be enough for it to appear — and to appear enabled, because the skill
+  // root means on. The panel used to only patch rows it already had, so this skill was invisible.
   handCopiedOnDisk = { directoryName: 'someone--hand-copied', name: 'hand-copied', enabled: true, origin: 'manual' }
   await click('.sm-topbar-actions .sm-icon-btn')
   for (let i = 0; i < 8; i += 1) await act(async () => { await settle() })
@@ -1256,16 +1222,10 @@ if (argv.includes('--interactions')) {
 
   // The store as it stands, plus proof the favorite survives a cold load. This is the last block
   // because it unmounts the panel: `root` cannot render again, so a second root takes over, and a
-  // page reload is simulated by remounting over a surviving localStorage.
-  const savedStore = window.localStorage.getItem('dsh-skill-market/v1')
-  interactions.savedStoreHasRecords = (() => {
-    try {
-      const parsed = JSON.parse(savedStore ?? '{}')
-      return parsed?.savedSkills !== undefined && Object.keys(parsed.savedSkills).length > 0
-    } catch {
-      return false
-    }
-  })()
+  // page reload is simulated by remounting over the document the Host still holds.
+  const savedStore = structuredClone(panelState.store.state)
+  interactions.savedStoreHasRecords = savedStore?.savedSkills !== undefined
+    && Object.keys(savedStore.savedSkills).length > 0
   // Select a different order before reloading, so "it comes back as downloads" is a real assertion
   // rather than one that would hold because nothing ever changed. Done from 发现, where the control is:
   // the panel was left on 已安装, so the select would not be in the document at all otherwise.
@@ -1287,9 +1247,7 @@ if (argv.includes('--interactions')) {
     })
   }
   interactions.sortAfterManualChange = host.querySelector('.sm-select-wrap select')?.value ?? null
-  interactions.storeSortAfterChange = (() => {
-    try { return JSON.parse(window.localStorage.getItem('dsh-skill-market/v1') ?? '{}')?.sortBy ?? null } catch { return 'unparseable' }
-  })()
+  interactions.storeSortAfterChange = panelState.store.state?.sortBy ?? null
   await act(async () => { root.unmount() })
   const reloaded = createRoot(host)
   await act(async () => {
@@ -1301,14 +1259,10 @@ if (argv.includes('--interactions')) {
   // The panel must open on 发现 however the last visit ended. The store this remount reads was
   // written while the panel had moved between tabs, so a persisted `view` would show up here.
   interactions.viewAfterReload = host.querySelector('.sm-viewtab.active')?.textContent?.trim() ?? null
-  interactions.savedStoreView = (() => {
-    try { return JSON.parse(window.localStorage.getItem('dsh-skill-market/v1') ?? '{}')?.view ?? null } catch { return 'unparseable' }
-  })()
+  interactions.savedStoreView = panelState.store.state?.view ?? null
   // And in the default order, even though the store was written while a different order was selected.
   interactions.sortAfterReload = host.querySelector('.sm-select-wrap select')?.value ?? null
-  interactions.savedStoreSort = (() => {
-    try { return JSON.parse(window.localStorage.getItem('dsh-skill-market/v1') ?? '{}')?.sortBy ?? null } catch { return 'unparseable' }
-  })()
+  interactions.savedStoreSort = panelState.store.state?.sortBy ?? null
   interactions.sortAfterReloadIsDownloads = interactions.sortAfterReload === 'downloads'
 
   // The opening state belongs here, after the remount: the panel opens on 发现 only now, and the select
@@ -1336,8 +1290,10 @@ if (argv.includes('--interactions')) {
   interactions.openSavedAfterReload = await openTab('收藏')
   interactions.savedRowsAfterReload = host.querySelectorAll('.sm-list-row').length
   interactions.savedRowNameAfterReload = host.querySelector('.sm-list-row h3')?.textContent ?? null
-  if (savedStore === null) window.localStorage.removeItem('dsh-skill-market/v1')
-  else window.localStorage.setItem('dsh-skill-market/v1', savedStore)
+  // Put the document back the way the reload found it: the remount above wrote its own
+  // reconciliation through, and everything after this point is about the reloaded page, not about
+  // a second, newer document.
+  panelState.store.state = savedStore
 
   // The inspector is reachable from any card; it must mount its four tabs.
   interactions.backToMarket2 = await openTab('发现')
@@ -1785,6 +1741,10 @@ export function landmarkOrderOf(root) {
 const { entries: landmarkOrder, ok: landmarkOrderOk } = landmarkOrderOf(host)
 
 console.error = originalError
+
+// The panel's periodic re-read of the stored document keeps the event loop alive, so the render is
+// torn down explicitly: without this the harness prints its report and then never exits.
+window.close()
 
 console.log(JSON.stringify({
   structure,

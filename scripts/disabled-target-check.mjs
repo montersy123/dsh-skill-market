@@ -1,18 +1,18 @@
 /**
  * Lock down that install and uninstall agree on where a disabled skill lives.
  *
- * Disabled state in this plugin IS a location: enabled skills are under `$DSH_HOME/skills`,
- * parked ones in the plugin's own disabled store. Every operation that touches files must
- * therefore resolve the same way, because two of them disagreeing is a silent state
- * corruption — an install that re-enables a skill the user parked, or an uninstall that
- * removes one copy and leaves another that the next scan will find.
+ * Disabled state in this plugin IS a location: enabled skills are under `$DSH_HOME/skills`, disabled
+ * ones in the plugin's own store, `<profile>/@montersy123-dsh-skill-market/data/skills`. Every
+ * operation that touches files must therefore resolve the same way, because two of them disagreeing is
+ * a silent state corruption — an install that re-enables a skill the user disabled, or an uninstall
+ * that removes one copy and leaves another that the next scan will find.
  *
  * Runs entirely inside a scratch root: nothing here reads or writes the real skill root.
  *
- *   node tools/disabled-target-check.mjs
+ *   node scripts/disabled-target-check.mjs
  */
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join, resolve, basename } from 'node:path'
 import { tmpdir } from 'node:os'
 
 // Before the import: the module reads the root on every call, but a leftover parked copy
@@ -64,7 +64,7 @@ await controller.setEnabled(NAME, false)
 expect(existsSync(liveDir) === false, 'disabling removes the directory from the skill root')
 expect(existsSync(parkedDir), 'disabling parks the directory in the disabled store')
 
-// The state tree is permanent: `data/` holds the version record and `disabled/` the parked
+// The state tree is permanent: `data/` holds the version record and `data/skills` the parked
 // skills, and both stay whether or not anything is currently parked. An earlier build pruned
 // whichever was empty, so the tree came and went with the current set of disabled skills.
 const dataDir = mod.pluginDataRootForTest()
@@ -147,6 +147,21 @@ for (const name of refused) {
 }
 expect(allRefused, 'but separators, traversal, reserved names and trailing dot/space are still refused')
 
+// The disabled store's name has settled: `data/skills` is the only directory read, and no compatibility
+// is kept for the spelling it had before. A directory left under an older name is therefore ignored
+// rather than adopted — which is what this asserts, because silently adopting something nobody writes
+// any more is how the old name would come back.
+const storeRoot = mod.disabledRootForTest()
+const staleStoreName = join(mod.pluginDataRootForTest(), 'disabled')
+mkdirSync(join(staleStoreName, NAME), { recursive: true })
+writeFileSync(join(staleStoreName, NAME, 'SKILL.md'), '---\nname: dev-expert\ndescription: stale\n---\n\nbody\n')
+await mod.migratePluginDataForTest()
+expect(existsSync(join(storeRoot, NAME)) === false, 'a store under an older name is not adopted')
+const staleRows = await mod.scanInstalledForTest()
+expect(staleRows.some((row) => row.directoryName === NAME) === false,
+  'and the disabled skill in it is not reported as installed')
+rmSync(staleStoreName, { recursive: true, force: true })
+
 // The state directory must not be inside the package. Every mechanism that replaces a package
 // — `pnpm install`, a hand reinstall, an interrupted upgrade — deletes that directory, and
 // when the disabled store lived there, every parked skill silently came back enabled.
@@ -170,17 +185,24 @@ expect(recordBefore[NAME]?.version === '2.0.1', 'the parked install is recorded 
 
 // The state lives outside the package, so pointing the plugin at a new root finds the same parked skill. The
 // relocation is the assertion: if the state were inside the package, a new root would find nothing.
-const relocatedRoot = mkdtempSync(join(tmpdir(), 'skill-market-relocated-'))
-mkdirSync(join(relocatedRoot, 'disabled'), { recursive: true })
-cpSync(join(dataRoot, 'disabled'), join(relocatedRoot, 'disabled'), { recursive: true })
-cpSync(join(dataRoot, 'installed.json'), join(relocatedRoot, 'installed.json'))
+//
+// The override is the *skill* root, and the data root is derived from it as a sibling
+// (`<dirname>/skill-market-data`), so the relocated root has to be nested the same way — otherwise the plugin
+// keeps reading the data root it started with and the assertion passes without relocating anything.
+const storeName = basename(mod.disabledRootForTest())
+const relocatedRoot = join(mkdtempSync(join(tmpdir(), 'skill-market-relocated-')), 'skills')
+mkdirSync(join(relocatedRoot, '..', 'skill-market-data', storeName), { recursive: true })
+cpSync(join(dataRoot, storeName), join(relocatedRoot, '..', 'skill-market-data', storeName), { recursive: true })
+cpSync(join(dataRoot, 'installed.json'), join(relocatedRoot, '..', 'skill-market-data', 'installed.json'))
 process.env.DSH_SKILL_MARKET_ROOT = relocatedRoot
-expect(existsSync(join(relocatedRoot, 'disabled', NAME)), 'a parked skill survives the state root being relocated')
+expect(existsSync(join(relocatedRoot, '..', 'skill-market-data', storeName, NAME)),
+  'a parked skill survives the state root being relocated')
+expect(resolve(mod.pluginDataRootForTest()) !== resolve(dataRoot), 'the relocation really moved the state root')
 expect(existsSync(liveDir) === false, 'the relocated state did not re-enable it in the skill root')
 const afterSwap = (await controller.summary()).skills.find((entry) => entry.directoryName === NAME)
 expect(afterSwap?.enabled === false, 'the summary still reports it disabled after the relocation')
 expect(afterSwap?.version === '2.0.1', 'the recorded release survived the relocation')
-rmSync(relocatedRoot, { recursive: true, force: true })
+rmSync(join(relocatedRoot, '..'), { recursive: true, force: true })
 
 reset()
 rmSync(mod.pluginDataRootForTest(), { recursive: true, force: true })

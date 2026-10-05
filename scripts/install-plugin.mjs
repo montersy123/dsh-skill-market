@@ -107,59 +107,47 @@ if (!apply) {
   process.exit(0)
 }
 
-// 0. Adopt any runtime state still sitting in an older location, BEFORE the package is replaced.
+// 0. Adopt the version record still sitting in an older location, BEFORE the package is replaced.
 //
-//    The disabled store and the version record have moved with the plugin: once inside
-//    `<package>/data`, then at `$DSH_HOME/skill-market/data`, now under the profile next to the
-//    publisher scope. Every move risks leaving parked skills behind, where the next scan simply
-//    does not find them and they come back enabled. This is the last moment the older copies
-//    can be rescued, because the package directory is about to be deleted.
+//    The record has moved with the plugin: once inside `<package>/data`, then at
+//    `$DSH_HOME/skill-market/data`, now under the profile next to the publisher scope. A move that is
+//    not adopted leaves the panel unable to say which release a skill was installed from.
 //
-//    This is a migration, not a save/restore: after it runs the state is outside the package
-//    for good, and no future install has to remember to preserve anything.
+//    The store of disabled skills is deliberately not part of this: its name has settled
+//    (`data/skills`), and no compatibility is kept for the directory names it had before, so nothing
+//    here reads an older spelling.
 const stateRoot = join(
   process.env.DSH_PROFILE_DIR ?? join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'profiles', 'desktop'),
   '@montersy123-dsh-skill-market', 'data',
 )
+/** The store's name, kept in step with the plugin's own `PARKED_DIRECTORY`. */
+const STORE = 'skills'
 const profileDir = process.env.DSH_PROFILE_DIR
   ?? join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'profiles', 'desktop')
-const olderStateRoots = [
-  join(TARGET, 'data'),
-  join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'skill-market', 'data'),
-  // The profile-scoped spellings this directory used while it was being settled.
-  join(profileDir, 'montersy123', 'skill-market', 'data'),
-  join(profileDir, '@montersy123', 'skill-market', 'data'),
-  join(profileDir, '@montersy123-skill-market', 'data'),
-].filter((root) => resolve(root) !== resolve(stateRoot))
+/** Where earlier builds kept the version record, oldest first. */
+const olderRecords = [
+  join(TARGET, 'data', 'installed.json'),
+  join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'skill-market', 'data', 'installed.json'),
+  join(profileDir, 'montersy123', 'skill-market', 'data', 'installed.json'),
+  join(profileDir, '@montersy123', 'skill-market', 'data', 'installed.json'),
+  join(profileDir, '@montersy123-skill-market', 'data', 'installed.json'),
+].filter((record) => resolve(record) !== resolve(join(stateRoot, 'installed.json')))
 
 const adopted = []
-for (const older of olderStateRoots) {
+for (const older of olderRecords) {
   if (existsSync(older) === false) continue
-  const olderDisabled = join(older, 'disabled')
-  if (existsSync(olderDisabled)) {
-    mkdirSync(join(stateRoot, 'disabled'), { recursive: true })
-    for (const entry of readdirSync(olderDisabled)) {
-      const to = join(stateRoot, 'disabled', entry)
-      if (existsSync(to)) continue
-      cpSync(join(olderDisabled, entry), to, { recursive: true })
-      adopted.push(entry)
-    }
-  }
-  const olderRecord = join(older, 'installed.json')
-  if (existsSync(olderRecord) && existsSync(join(stateRoot, 'installed.json')) === false) {
-    mkdirSync(stateRoot, { recursive: true })
-    cpSync(olderRecord, join(stateRoot, 'installed.json'))
-    adopted.push('installed.json')
-  }
-  if (adopted.length > 0) {
-    console.log(`adopted state from ${older}`)
-    console.log(`  into ${stateRoot}`)
-  }
-  rmSync(older, { recursive: true, force: true })
+  if (existsSync(join(stateRoot, 'installed.json'))) break
+  mkdirSync(stateRoot, { recursive: true })
+  cpSync(older, join(stateRoot, 'installed.json'))
+  adopted.push('installed.json')
+  console.log(`adopted the version record from ${older}`)
+  rmSync(older, { force: true })
   // Walk up while each level is empty, so `montersy123/` and `skill-market/` go too: an empty
-  // tree that looks like state is worse than no tree.
+  // tree that looks like state is worse than no tree. The data directory itself is never removed —
+  // it also holds the panel's own state, and an empty-looking shell is not this loop's business.
   let shell = dirname(older)
-  while (resolve(shell) !== resolve(profileDir) && existsSync(shell) && readdirSync(shell).length === 0) {
+  while (resolve(shell) !== resolve(profileDir) && resolve(shell) !== resolve(stateRoot)
+    && existsSync(shell) && readdirSync(shell).length === 0) {
     rmSync(shell, { recursive: true, force: true })
     shell = dirname(shell)
   }
@@ -248,9 +236,9 @@ console.log(`  is a real directory : ${installed !== undefined && installed.isSy
 for (const entry of ['lib', 'locale', 'icon.svg', 'cordis.patch.yml', 'package.json']) {
   console.log(`  ${entry.padEnd(19)}: ${existsSync(join(TARGET, entry)) ? 'ok' : 'MISSING'}`)
 }
-const parked = join(stateRoot, 'disabled')
+const parked = join(stateRoot, STORE)
 const parkedCount = existsSync(parked) ? readdirSync(parked).length : 0
 console.log(`  ${'data/'.padEnd(19)}: ${existsSync(join(TARGET, 'data')) ? 'PRESENT (should not be — state now lives outside the package)' : 'inside the package: none (correct)'}`)
 console.log(`  ${'runtime state'.padEnd(19)}: ${stateRoot}`)
-console.log(`  ${'  parked skills'.padEnd(19)}: ${String(parkedCount)}${adopted.length > 0 ? ` (adopted ${String(adopted.length)} from the package)` : ''}`)
+console.log(`  ${`  ${STORE}/`.padEnd(19)}: ${String(parkedCount)} parked skill(s)${adopted.length > 0 ? ` (adopted ${String(adopted.length)} from an older location)` : ''}`)
 console.log('\nrestart DeepSeek Harness for the new bundle row to load')

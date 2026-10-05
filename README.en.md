@@ -86,6 +86,29 @@ dsh plugin --profile web add ./dsh-skill-market
 An installed plugin does not update itself. Pull the new version and run the install command again — installed
 skills, disabled state and favourites are all preserved, because that state lives outside the package.
 
+### Where your data lives
+
+Everything the plugin owns sits in one folder under the profile directory, and nothing is written into DSH's own
+storage:
+
+```
+<profile>/@montersy123-dsh-skill-market/data/
+├── panel.json        favourites (with their full records), the installed ledger, category, restart advice
+├── installed.json    which release each skill was installed from
+└── skills/           disabled skills, moved here whole so the Harness cannot see them
+```
+
+Enabled skills are not in this folder — they live in the Harness's own skill root, `$DSH_HOME/skills`. The
+panel's switch moves a directory between the two, so "enabled" is a location, not a flag.
+
+The desktop profile defaults to `%USERPROFILE%\.dsh\profiles\desktop`. To back up or move your settings, copy that
+`data` directory; to start clean, delete it (installed skills live separately, under `$DSH_HOME/skills`).
+
+> Older versions kept the panel's state in the page's **Local Storage** — that is, DSH desktop's own
+> `%APPDATA%\@deepseek-ai\dsh-desktop\Local Storage`, shared with every other plugin. The first time the panel
+> opens after an upgrade it moves that data into `panel.json` and deletes the old keys, so no favourite or ledger
+> row is lost.
+
 **Installing a skill requires restarting DeepSeek Harness**: the files land on disk immediately, but a
 conversation carries the skill catalogue its agent was built with, so a newly installed skill becomes callable in
 **new** conversations. The panel says so in a banner and a toast, and does not block any control while it waits —

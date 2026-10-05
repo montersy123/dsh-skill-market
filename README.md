@@ -83,6 +83,23 @@ dsh plugin --profile web add ./dsh-skill-market
 
 安装的插件不会自动升级。拉取新版本后重新执行安装命令即可 —— 已装的技能、停用状态与收藏都会保留(状态存放在包外)。
 
+### 我的数据存在哪
+
+插件的数据**全部**在 profile 目录下的一个文件夹里,不写进 DSH 自己的存储:
+
+```
+<profile>/@montersy123-dsh-skill-market/data/
+├── panel.json        收藏(含完整技能记录)、已安装账本、类目偏好、待重启提示
+├── installed.json    每个技能装的是哪一版
+└── skills/           停用的技能(目录整份移到这里,Harness 就此读不到)
+```
+
+已启用的技能不在这个目录里,它们在 Harness 自己的技能根 `$DSH_HOME/skills` 下 —— 面板的开关就是在这两个目录之间搬目录,所以"启用/停用"是一个位置,而不是一个标记。
+
+桌面端默认的 profile 是 `%USERPROFILE%\.dsh\profiles\desktop`。备份或迁移就复制这个 `data` 目录;想彻底清空,删掉它即可(已装的技能另在 `$DSH_HOME/skills` 下)。
+
+> 更早的版本把面板状态存在页面的 **Local Storage** 里 —— 也就是 DSH 桌面端自己的 `%APPDATA%\@deepseek-ai\dsh-desktop\Local Storage`,和其他插件挤在同一份存储中。升级后第一次打开面板会自动把旧数据搬进 `panel.json` 并删除旧键,收藏与账本不会丢。
+
 **安装技能后需要重启 DeepSeek Harness**:技能文件会立刻落到磁盘,但一场对话用的是它开始时就确定的技能清单,所以新装的技能在**新会话**里才能调用。面板会用一条提示条和一个 toast 说明这一点,并且不会因此锁住任何控件 —— 你可以一次改好几个技能,再重启一次。
 
 ## 用它
