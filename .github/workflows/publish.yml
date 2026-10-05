@@ -28,12 +28,15 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Trusted publishing needs npm 11.5.1 or newer; a runner's bundled npm can be older.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
+          # This package has no dependencies, so nothing is installed from a lockfile. Caching in a
+          # release build is a way to publish something other than what was checked out, so it is off.
+          package-manager-cache: false
       - run: npm install -g npm@latest
       - run: npm --version
 
