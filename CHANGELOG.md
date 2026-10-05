@@ -2,6 +2,41 @@
 
 本文件记录每个版本的变更。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.0.0] - 2026-10-05
+
+### 变更
+
+- **停用技能的目录改名 `disabled` → `skills`,需要手工一步。** 它一直放在
+  `<profile>/@montersy123-dsh-skill-market/data/` 下,现在叫 `skills` —— 这个名字说的是里面装的
+  是什么;`disabled` 描述的是那些技能的状态,读起来却像是"这个目录被停用了"。插件只认这一个名字,
+  **旧名字不再兼容**:升级前有停用技能的话,请把 `data/disabled/` 里的目录手工移到 `data/skills/`,
+  否则面板不会列出它们 —— **文件不会丢**,还在磁盘上。
+
+  这就是这次是 **大版本** 的原因:升级路径上有一个必须由人来做的一步,静默略过会让人以为技能没了。
+
+- **面板的数据搬进插件自己的目录。** 收藏(含完整技能记录)、已安装账本、类目偏好与待重启提示
+  以前存在页面的 `Local Storage` 里。桌面端那份存储**不是本插件的**:它是 DSH 自己的一个 LevelDB,
+  按 origin 而不是按插件划分,与 DSH 的键、别的插件共用一份 —— 插件的数据躺在 DSH 的数据里,
+  卸载插件不会带走它,用户也找不到自己的收藏去了哪。现在它们在
+  `<profile>/@montersy123-dsh-skill-market/data/panel.json`,由插件自己的 Host 半读写。
+
+  **升级后第一次打开面板会自动把旧数据搬过去并删除旧键**,收藏与账本不会丢。
+
+- **重启提示的有效期改为「这次 Host 进程启动的时间」。** 以前用 `sessionStorage` 标记近似表达
+  "本次浏览会话" —— 刷新保留、关窗即清。现在记的是做出改动时 Host 的启动时间:刷新、甚至关窗再
+  打开(Host 并没有重启)都继续提示,Harness 真正重启后才消失并清掉陈旧的记录。那才是这个提示
+  真正关心的那个事件。
+
+### 修复
+
+- 面板状态的写入改成**原子写 + 重试**:先写临时文件再 `rename`,并重试 Windows 上"文件正被别人
+  占用"时的 `EPERM`。实测过一次这样的失败会让保存落后一次改动。
+- 写入**立即发出**,不再延迟一个 tick —— 延迟期间关掉页面就会丢掉那次改动。
+- 旧的 `Local Storage` 键**只在写入落盘之后才删除**,Host 存不下时改为按旧格式留一份救生副本。
+  顺序反了会让"新客户端 + 旧 Host"这种组合直接丢数据(实测发生过,收藏是从 LevelDB 的
+  write-ahead log 里捞回来的)。
+- 收藏列表里已经不存在的记录会被清掉,并重写文件:它们渲染不出来,只会一直躺在文件里。
+
 ## [1.0.2] - 2026-10-05
 
 ### 修复
@@ -64,6 +99,7 @@ MIT。面板中的技能来自 SkillHub,由各自作者发布,**版权归原作�
 
 本项目的更新日志以中文撰写。英文发布说明见每个 GitHub Release 页面。
 
+[2.0.0]: https://github.com/montersy123/dsh-skill-market/releases/tag/v2.0.0
 [1.0.2]: https://github.com/montersy123/dsh-skill-market/releases/tag/v1.0.2
 [1.0.1]: https://github.com/montersy123/dsh-skill-market/releases/tag/v1.0.1
 [1.0.0]: https://github.com/montersy123/dsh-skill-market/releases/tag/v1.0.0
