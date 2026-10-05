@@ -45,6 +45,9 @@
   "engines": {
     "node": ">=20"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "install:plugin": "node scripts/install-plugin.mjs --apply",
     "test": "node scripts/run-checks.mjs",
