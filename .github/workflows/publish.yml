@@ -1,0 +1,72 @@
+# Publish to npm with a trusted publisher (OIDC): no token, and no 2FA prompt.
+#
+# `id-token: write` is the entire mechanism. GitHub mints a short-lived OIDC token for this job, npm
+# exchanges it for the right to publish this one package, and the registry stores a provenance
+# attestation tying the tarball to this commit and this workflow. Nothing secret is stored in the
+# repository, and npm's "a bypass-2FA token is required to publish" rule never comes into play.
+#
+# The trusted publisher registered on npmjs.com has to name this repository and THIS filename
+# (`publish.yml`), with an empty environment, or the exchange is refused.
+#
+# Two triggers:
+#   - a `v*` tag publishes a release;
+#   - workflow_dispatch publishes whatever the selected ref holds, which is how a version whose tag was
+#     pushed before this file existed still gets onto npm (see the note on provenance below).
+
+name: publish
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Trusted publishing needs npm 11.5.1 or newer; a runner's bundled npm can be older.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install -g npm@latest
+      - run: npm --version
+
+      # A tag that disagrees with package.json would publish a version nobody tagged, so it stops here
+      # rather than on the registry. workflow_dispatch has no tag to compare against.
+      - name: The tag agrees with package.json
+        if: github.ref_type == 'tag'
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "${GITHUB_REF_NAME}" != "v$version" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match package.json version ${version}"
+            exit 1
+          fi
+
+      # The full suite is deliberately not run here: the render check loads React from
+      # scripts/dev/reactsmoke/node_modules, a local development install that is not in the repository.
+      # This gate is dependency-free and covers what publishing actually depends on.
+      - name: The publish gate
+        run: node scripts/publish-check.mjs
+
+      # npm refuses to overwrite a published version, but with a bare 403 that reads like an auth
+      # problem. Say what is actually wrong instead.
+      - name: Refuse a version that is already published
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "::error::$name@$version is already published; bump the version instead of republishing"
+            exit 1
+          fi
+
+      # `access: public` comes from publishConfig in package.json, so it is not repeated here. The
+      # provenance attestation names this commit: for a version whose tag predates this file, that is
+      # the commit carrying the workflow rather than the tag itself — the tarball is identical either
+      # way, because .github/ is not part of the package's `files`.
+      - run: npm publish --provenance
