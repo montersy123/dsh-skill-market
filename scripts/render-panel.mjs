@@ -399,12 +399,16 @@ window.fetch = async (url, init = {}) => {
     }
   }
   if (target.includes('/skill-file')) {
-    const path = new URL(target, 'http://stub').searchParams.get('path') ?? ''
+    const query = new URL(target, 'http://stub').searchParams
+    const path = query.get('path') ?? ''
+    // The text names the skill it was served for, because `SKILL.md` is a path every skill shares: a
+    // preview that does not say whose file it is cannot be checked for rendering another skill's bytes.
+    const owner = `${query.get('namespace') ?? ''}/${query.get('slug') ?? ''}`
     // Markdown files get Markdown, everything else gets a plain body, so a test can tell
     // "rendered" from "shown verbatim".
     const text = /\.(md|markdown)$/i.test(path)
-      ? `---\nname: dev-expert\ndescription: 描述\n---\n\n# 正文标题\n\n这是 ${path} 的正文段落。\n\n- 要点一\n- 要点二\n`
-      : '#!/usr/bin/env python\nprint("hello")\n'
+      ? `---\nname: dev-expert\ndescription: 描述\n---\n\n# 正文标题\n\n这是 ${owner} 的 ${path} 正文段落。\n\n- 要点一\n- 要点二\n`
+      : `#!/usr/bin/env python\n# ${owner}\nprint("hello")\n`
     return { ok: true, status: 200, async json() { return { path, truncated: false, bytes: text.length, text } } }
   }
 
@@ -1561,6 +1565,31 @@ if (argv.includes('--interactions')) {
     })
   }
   interactions.inspectorClosed = host.querySelector('.sm-inspector.open') === null
+
+  // A file preview belongs to one file *of one skill*. The preview cache was keyed by
+  // `<version>:<path>` — a key every skill shares for `SKILL.md` — so the second skill's 文件 tab hit the
+  // first skill's entry and rendered the first skill's text. Two drawers, the same file name, and the
+  // stub names the skill it served: nothing else can tell a cache mistake from a correct fetch.
+  interactions.previewOwners = {}
+  const previewOwner = async (name, label) => {
+    const opened = await openDrawerFor(name)
+    await clickTab('文件')
+    await click('button.sm-tree-file')
+    interactions.previewOwners[label] = (host.querySelector('.sm-insp-body')?.textContent ?? '').slice(0, 240)
+    const closeDrawer = host.querySelector('.sm-insp-head .sm-icon-btn')
+    if (closeDrawer !== null) {
+      await act(async () => {
+        closeDrawer.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }))
+        await settle()
+      })
+    }
+    return opened
+  }
+  interactions.previewOpenedFirst = await previewOwner('编程专家.Skill', 'first')
+  interactions.previewOpenedSecond = await previewOwner('育儿大师.Skill', 'second')
+  interactions.firstPreviewNamesItsSkill = /indiv-ebandao\/dev-expert/.test(interactions.previewOwners.first)
+  interactions.secondPreviewNamesItsSkill = /indiv-ebandao\/parenting-expert/.test(interactions.previewOwners.second)
+  interactions.secondPreviewLeaksAnother = /indiv-ebandao\/dev-expert/.test(interactions.previewOwners.second)
 }
 
 const text = host.textContent ?? ''

@@ -94,6 +94,12 @@ const assertions = [
   ['the installed lookup folds `_` against `-`', () => report.interactions?.installedLookupFoldsUnderscore === true],
   ['reconciliation trusts the Host identity, not the directory name', () => report.interactions?.reconciliationUsesHostIdentity === true],
   ['the sort control renders translated labels', () => (report.interactions?.openingSortOptionLabels ?? [])[0] === '按下载量'],
+  // A file preview belongs to one file *of one skill*. Keyed by `<version>:<path>` alone, the second
+  // skill's 文件 tab was a cache hit on the first skill's `SKILL.md` and rendered its text — the stub
+  // names the skill it served, so a mix-up is visible at all.
+  ['the first skill\'s file preview is its own', () => report.interactions?.firstPreviewNamesItsSkill === true],
+  ['a second skill\'s file preview is its own, not the first one\'s', () => report.interactions?.secondPreviewNamesItsSkill === true
+    && report.interactions?.secondPreviewLeaksAnother === false],
   ['the page rendered without a React error', () => (report.errors ?? []).filter((line) => line.includes('deprecated') === false).length === 0],
 ]
 
