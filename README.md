@@ -11,8 +11,8 @@
 
 <p align="center">
   <a href="https://github.com/montersy123/dsh-skill-market/stargazers"><img src="https://img.shields.io/github/stars/montersy123/dsh-skill-market?style=social" alt="GitHub stars"></a>
+  <a href="https://www.npmjs.com/package/@montersy123/dsh-skill-market"><img src="https://img.shields.io/npm/v/@montersy123/dsh-skill-market?logo=npm&color=cb3837" alt="npm 版本"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/install-github%3Amontersy123%2Fdsh--skill--market-181717?logo=github" alt="Install from GitHub">
 </p>
 
 <p align="center">
@@ -33,13 +33,13 @@
 
 ### 从 Harness 界面安装(推荐)
 
-打开 **DeepSeek Harness → 插件 → 添加插件**,粘贴本仓库地址:
+打开 **DeepSeek Harness → 插件 → 添加插件**,填入 npm 包名:
 
 ```text
-https://github.com/montersy123/dsh-skill-market
+@montersy123/dsh-skill-market
 ```
 
-点 **安装**。仓库里的代码就是可运行的 ESM,**不需要任何构建步骤**。
+点 **安装**。包里的代码就是可运行的 ESM,**不需要任何构建步骤**。这个对话框同样接受 GitHub 仓库地址和本地目录路径。
 
 <p align="center">
   <img src="assets/add-plugin-zh.png" width="72%" alt="插件页与「添加插件」对话框:填入插件包名、GitHub 仓库地址或本地目录路径,然后点安装。">
@@ -51,11 +51,13 @@ https://github.com/montersy123/dsh-skill-market
 
 ```sh
 # Web 端
-dsh plugin --profile web add github:montersy123/dsh-skill-market
+dsh plugin --profile web add @montersy123/dsh-skill-market
 
 # 桌面端
-dsh plugin --profile desktop add github:montersy123/dsh-skill-market
+dsh plugin --profile desktop add @montersy123/dsh-skill-market
 ```
+
+这两条从 **npm 官方源**安装,拿到的是已发布的版本。要用仓库 `main` 上还没发布的提交,把包名换回 `github:montersy123/dsh-skill-market` —— pnpm 会把 git 依赖钉在解析到的那一个 commit 上,以后升级还得重新解析,所以日常安装用包名更省事。
 
 `dsh plugin` 会把包管理操作转发给 pnpm,所以 `web` 与 `desktop` 的差别只在装进哪个 profile。**先确认 pnpm 在 PATH 上。**
 
@@ -81,7 +83,7 @@ dsh plugin --profile web add ./dsh-skill-market
 
 ### 升级
 
-安装的插件不会自动升级。拉取新版本后重新执行安装命令即可 —— 已装的技能、停用状态与收藏都会保留(状态存放在包外)。
+安装的插件不会自动升级。重新执行同一条安装命令即可 —— 包名写法会按语义化版本解析(不像 git 依赖那样钉在某个 commit 上)。已装的技能、停用状态与收藏都会保留(状态存放在包外)。
 
 ### 我的数据存在哪
 
