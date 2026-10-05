@@ -5,9 +5,14 @@
  * checks in this session silently returned wrong answers for that reason, which is worse than
  * failing outright.
  *
- *   node tools/installed-copy-check.mjs
+ * A profile that does not have the plugin installed is **not** a failure: there is no copy to compare,
+ * and every assertion below reads the installed copy as its input. It used to crash with an `ENOENT`
+ * stack trace instead, which reads as a broken check rather than as "you have not installed it" — and
+ * the suite is run from checkouts where nobody has.
+ *
+ *   node scripts/installed-copy-check.mjs
  */
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { findRemainingChinese } from './i18n-remaining.mjs'
@@ -17,6 +22,18 @@ const pkg = join(
   'profiles', process.env.DSH_PROFILE ?? 'desktop',
   'node_modules', '@montersy123', 'dsh-skill-market',
 )
+
+// Both halves are read as the input for every assertion, so either one missing means there is nothing
+// to check. Reported, then skipped — a profile without the plugin is a legitimate state, not a defect
+// in the source this check exists to guard.
+const halves = ['lib/index.js', 'lib/client.js'].map((relative) => join(pkg, relative))
+if (halves.some((path) => existsSync(path) === false)) {
+  console.log('installed copy:', pkg)
+  console.log('  not installed in this profile, so there is no copy to compare.')
+  console.log('  install it with `npm run install:plugin`, or set DSH_PROFILE to a profile that has it.')
+  console.log('\nINSTALLED COPY CHECK SKIPPED (nothing installed)')
+  process.exit(0)
+}
 
 /** Assertions, each a short name and a predicate over the installed source. */
 const checks = [
