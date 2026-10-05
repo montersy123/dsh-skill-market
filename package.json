@@ -1,6 +1,6 @@
 {
   "name": "@montersy123/dsh-skill-market",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "private": false,
   "description": "Browse, search and install SkillHub skills inside DeepSeek Harness. / 在 DeepSeek Harness 内浏览、搜索并安装 SkillHub 技能。",
   "type": "module",

@@ -2,6 +2,17 @@
 
 本文件记录每个版本的变更。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.0.2] - 2026-10-05
+
+### 变更
+
+- **安装方式改为 npm 包名。** 本插件已发布到 npm:[`@montersy123/dsh-skill-market`](https://www.npmjs.com/package/@montersy123/dsh-skill-market)。
+  README 与 Harness「添加插件」对话框现在都填这个包名 —— 它按语义化版本解析,不像 `github:` 依赖那样被
+  钉在解析到的某一个 commit 上(那正是"重装却不移动"的原因)。想跑 `main` 上尚未发布的提交时,仍然可以
+  用 `github:montersy123/dsh-skill-market`,两种写法都保留。
+- 包内声明 `publishConfig.access: "public"`。公开访问的意图现在**随包一起走**,不再只写在仓库的 `.npmrc`
+  里 —— 从别处(CI、另一台机器)发布时不会因为漏了 `--access public` 而当成私有包。
+
 ## [2.0.1] - 2026-10-05
 
 ### 修复
@@ -112,6 +123,7 @@ MIT。面板中的技能来自 SkillHub,由各自作者发布,**版权归原作�
 
 本项目的更新日志以中文撰写。英文发布说明见每个 GitHub Release 页面。
 
+[2.0.2]: https://github.com/montersy123/dsh-skill-market/releases/tag/v2.0.2
 [2.0.1]: https://github.com/montersy123/dsh-skill-market/releases/tag/v2.0.1
 [2.0.0]: https://github.com/montersy123/dsh-skill-market/releases/tag/v2.0.0
 [1.0.2]: https://github.com/montersy123/dsh-skill-market/releases/tag/v1.0.2
