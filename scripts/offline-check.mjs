@@ -1,16 +1,16 @@
 /**
- * What the panel is told when the skill market cannot be reached.
+ * What the panel shows when the market cannot be reached.
  *
- * The Host half owns the only address this plugin has (`UPSTREAM`), so an unreachable market is a Host
- * failure, and the panel can only say something useful if the Host says *which* failure it hit. Node
- * reports "refused", "did not resolve" and "answered too slowly" the same way at the top — a `TypeError`
- * reading `fetch failed`, with the useful part buried in the `cause` chain — and the panel used to print
- * that English line at the reader, under a Chinese title.
+ * The Host half owns the only address this plugin has, and when it cannot read the market it answers 502
+ * carrying a Node message — `技能市场上游请求失败：fetch failed`. That text is what the panel used to put
+ * in front of the reader. It now answers that status with a sentence of its own, and a Host that does not
+ * answer at all (a restart, a dropped page connection) gets the same sentence instead of the browser's
+ * `TypeError: Failed to fetch`.
  *
- * This drives the real route handler with each kind of failure and checks the code it answers with, then
- * checks the client half maps those codes to the two sentences in `lib/locale.js`. The visual state
- * itself is exercised by pointing a running DSH at a dead port
- * (`DSH_SKILL_MARKET_UPSTREAM=http://127.0.0.1:9`).
+ * Two halves have to hold for that: the Host must keep answering 502 when the market is unreachable, and
+ * the client must keep turning 502/504 — and a dead connection — into `err.offline`. The rendered state
+ * itself is exercised by hand: point `UPSTREAM` in `lib/index.js` at a port nothing listens on, restart
+ * DSH, and look at the panel.
  *
  *   node scripts/offline-check.mjs
  */
@@ -68,9 +68,8 @@ const origin = `http://127.0.0.1:${String(server.address().port)}`
 /**
  * Ask the real route handler one question while `globalThis.fetch` fails the given way.
  *
- * The Host reads the upstream through the global `fetch`, so failing it fails every upstream read; the
- * call back into the server itself has to use the real implementation, which is why it is captured
- * first.
+ * The Host reads the upstream through the global `fetch`, so failing it fails every upstream read. The
+ * call back into the server itself has to use the real implementation, which is why it is captured first.
  *
  * @param {unknown} failure - What the upstream `fetch` should reject with.
  * @param {string} [path] - Route to ask.
@@ -93,64 +92,43 @@ const refused = Object.assign(new TypeError('fetch failed'), { cause: { code: 'E
 const noDns = Object.assign(new TypeError('fetch failed'), { cause: { code: 'ENOTFOUND' } })
 /** An expired `AbortSignal.timeout`, which every upstream read in the Host sets. */
 const timedOut = Object.assign(new Error('The operation was aborted due to timeout'), { name: 'TimeoutError' })
-/** A cancelled request is not a network story either, and must not be retold as one by accident. */
-const aborted = Object.assign(new Error('This operation was aborted'), { name: 'AbortError' })
-/** Anything else — a 500, a broken body, a bug in this plugin. */
-const other = Object.assign(new TypeError('fetch failed'), { cause: { code: 'UND_ERR_INVALID_ARG' } })
 
-console.log('the Host names the failure it hit')
-const offline = await askWith(refused)
-expect(offline.status === 502 && offline.body.code === 'offline',
-  `a refused connection → 502 offline (got ${offline.status} ${String(offline.body.code)})`)
-const dns = await askWith(noDns)
-expect(dns.body.code === 'offline', `an unresolvable name → offline (got ${String(dns.body.code)})`)
-const slow = await askWith(timedOut)
-expect(slow.status === 504 && slow.body.code === 'timeout',
-  `an expired timeout → 504 timeout (got ${slow.status} ${String(slow.body.code)})`)
-const cancelled = await askWith(aborted)
-expect(cancelled.body.code === 'timeout', `a cancelled read → timeout (got ${String(cancelled.body.code)})`)
-const unknown = await askWith(other)
-expect(unknown.status === 502 && unknown.body.code === 'upstream',
-  `an unrecognised failure → 502 upstream (got ${unknown.status} ${String(unknown.body.code)})`)
-// The raw reason stays in the payload: the panel is what chooses the sentence, and a developer looking
-// at the response should still be able to see what Node said.
-expect(typeof offline.body.error === 'string' && offline.body.error.includes('上游'),
-  'the raw reason is still carried alongside the code')
+console.log('the Host answers 502 when it cannot read the market')
+for (const [label, failure] of [['a refused connection', refused], ['an unresolvable name', noDns], ['an expired timeout', timedOut]]) {
+  const answer = await askWith(failure)
+  expect(answer.status === 502, `${label} → 502 (got ${answer.status})`)
+  // The Node text stays in the payload. That is the point: the panel chooses the sentence, and the
+  // response stays useful to whoever is reading responses rather than screens.
+  expect(typeof answer.body.error === 'string' && answer.body.error.length > 0, `${label} → the reason is still carried`)
+}
 
-// Every upstream read has its own handler, so one of them forgetting the code is the gap a check on a
-// single route would miss. The file route has a 60-second timeout of its own, the category counts build
-// on the category route, and the safety verdict is fetched per card.
+// Every upstream read has its own handler, and a status that is not 502 is a status the panel passes
+// through as-is — so each of them has to be the one the panel keys on.
 for (const path of [
   '/skill-market/api/categories',
   '/skill-market/api/category-counts',
   '/skill-market/api/skill-security?slug=dev-expert&namespace=indiv-ebandao',
 ]) {
   const answer = await askWith(refused, path)
-  expect(answer.body.code === 'offline', `${path} → offline (got ${answer.status} ${String(answer.body.code)})`)
+  expect(answer.status === 502, `${path} → 502 (got ${answer.status})`)
 }
 
-// A refused request that is the caller's own fault must keep its 400 and gain no code: it is not a
-// network story, and telling the reader to check their network would be wrong.
+// A refused request that is the caller's own fault stays a 400. Telling that reader to check their
+// network would be wrong, so it must not look like the case above.
 const bad = await askWith(refused, '/skill-market/api/skill-security')
-expect(bad.status === 400 && bad.body.code === undefined,
-  `a refused request of the panel\'s own making → 400 without a code (got ${bad.status} ${String(bad.body.code)})`)
+expect(bad.status === 400, `a refused request of the panel's own making → 400 (got ${bad.status})`)
 
-console.log('\nthe panel turns those codes into sentences')
+console.log('\nthe panel turns that status into a sentence')
 const client = readFileSync('lib/client.js', 'utf8')
-expect(/body\?\.code === 'offline'[\s\S]{0,120}err\.offline/.test(client), "code 'offline' → the err.offline sentence")
-expect(/body\?\.code === 'timeout'[\s\S]{0,120}err\.timeout/.test(client), "code 'timeout' → the err.timeout sentence")
+expect(/status === 502 \|\| status === 504[\s\S]{0,120}err\.offline/.test(client),
+  'a 502/504 from the proxy → the err.offline sentence')
 expect(/catch \(error\) \{[\s\S]{0,200}AbortError[\s\S]{0,200}err\.offline/.test(client),
   'a Host that never answers → the same sentence, with AbortError left alone')
 
 const locale = readFileSync('lib/locale.js', 'utf8')
-for (const key of ["'err.offline'", "'err.timeout'"]) {
-  const found = locale.split(key).length - 1
-  expect(found === 2, `${key} is defined in both languages (found ${found})`)
-}
-for (const key of ['"err.offline"', '"err.timeout"']) {
-  const found = client.split(key).length - 1
-  expect(found === 2, `${key} reached the generated client block (found ${found})`)
-}
+const found = locale.split("'err.offline'").length - 1
+expect(found === 2, `err.offline is defined in both languages (found ${found})`)
+expect(client.split('"err.offline"').length - 1 === 2, 'err.offline reached the generated client block')
 
 server.close()
 rmSync(scratch, { recursive: true, force: true })
