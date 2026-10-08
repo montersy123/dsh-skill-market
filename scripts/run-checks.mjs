@@ -46,6 +46,7 @@ const CHECKS = [
   ['node', ['scripts/installed-copy-check.mjs']],
   // Behaviour, over a real HTTP server or a rendered panel.
   ['node', ['scripts/route-check.mjs']],
+  ['node', ['scripts/offline-check.mjs']],
   ['node', ['scripts/import-check.mjs']],
   ['node', ['scripts/disabled-target-check.mjs']],
   ['node', ['scripts/install-check.mjs']],

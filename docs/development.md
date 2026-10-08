@@ -663,6 +663,36 @@ Node 里取数据，Client 半改调同源路径：
 支持 `page / pageSize / sortBy / order / keyword / category / source / labels`，
 `pageSize` 上限 100，成功响应缓存 5 分钟（最多 64 条查询）。
 
+### 断网 / 超时怎么测，以及面板会说什么
+
+插件里**只有一处**地址：`lib/index.js` 顶部的 `UPSTREAM`。测试用
+`DSH_SKILL_MARKET_UPSTREAM` 覆盖它，不必改代码；但它是 **Host 半**，改完必须**重启** DSH
+（Client 半会热重载，Host 半不会）：
+
+```powershell
+# 立刻失败：端口没人监听 → 连接被拒
+$env:DSH_SKILL_MARKET_UPSTREAM='http://127.0.0.1:9'; dsh --profile desktop
+
+# 卡住直到超时：地址保留但包被丢弃（TEST-NET-1）→ 15s / 30s / 60s 后超时
+$env:DSH_SKILL_MARKET_UPSTREAM='http://192.0.2.1'; dsh --profile desktop
+```
+
+Host 半把上游失败分成三类，与响应一起回给面板（`code` 字段），面板据此说人话：
+
+| 上游怎么了 | Node 报的原始错误 | `code` | HTTP | 面板上显示 |
+|---|---|---|---|---|
+| 连不上：拒绝 / 域名解析不了 / 路由不通 / 连接被重置 | `TypeError: fetch failed`，真正的原因在 `cause.code` | `offline` | 502 | 连不上技能市场，请检查网络后重试 |
+| 连上了但不回：`AbortSignal.timeout` 到期 | `TimeoutError` | `timeout` | 504 | 技能市场响应超时，请稍后重试 |
+| 其他上游失败：500、坏 body | 任意 | `upstream` | 502 | 技能市场上游请求失败：…（照旧带原文） |
+
+面板那一侧还有一条:**Host 自己完全答不上来**（重启中、页面连接断了）也落到同一句
+`err.offline` —— 这里以前会把浏览器给的 `TypeError: Failed to fetch` 原样显示出来。主动取消
+（`AbortError`）不受这条影响，仍被静默忽略，否则切分类时的取消会变成一条假故障。
+
+这两条链的检查是 `scripts/offline-check.mjs`（已注册进 `run-checks.mjs`）：它用真实路由处理函数
+分别喂进 拒绝 / DNS 失败 / 超时 / 取消 / 未知失败，断言状态码与 `code`，并断言客户端把
+`offline`、`timeout` 映射到 `lib/locale.js` 里那两句文案。
+
 ## 视觉契约
 
 Token 名称与原型 `:root` 一一对应（`--bg` → `--sm-bg` …），浅色取值就是原型导出的
