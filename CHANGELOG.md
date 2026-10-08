@@ -2,6 +2,31 @@
 
 本文件记录每个版本的变更。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.0.3] - 2026-10-05
+
+### 变更
+
+- **插件自己的数据搬到 `$DSH_HOME/storages/@montersy123/dsh-skill-market/data`**,以前在
+  `<profile>/@montersy123-dsh-skill-market/data`。`storages` 是 DSH 存放插件自有状态的地方 ——
+  `dsh-cost-meter` 的账本就在 `storages/cost-meter/ledger.json` —— 所以这不是新造的位置,profile
+  目录也不必再放一个包形的文件夹。目录名同时改成包名的两段(`@montersy123` 一层、`dsh-skill-market`
+  一层),路径本身说明是哪个包拥有它。
+
+  **升级要自己做一步:把旧的 `data` 目录整个搬到新位置**(`panel.json`、`installed.json`、
+  `skills/` 三样一起)。**这个版本不读旧位置** —— 不搬的话,收藏、账本、停用状态都会看起来不见了
+  (文件还在磁盘上,没被删)。为此存在过的 `migratePluginData()` 一并删除,安装器里同样的收养逻辑
+  也删了。
+
+  一个要知道的后果:**这份状态现在是 `$DSH_HOME` 级、不按 profile 隔离** —— 同一个 home 下同时跑
+  `desktop` 与 `web`,收藏与账本是同一份。
+
+### 修复
+
+- **连不上技能市场时,面板说的是人话了。** 以前那里显示 `技能数据加载失败` 配 `技能市场上游请求失败：
+  fetch failed`(Node 的英文原文);现在是「**连不上技能市场，请检查网络后重试**」。DSH 自己完全没应答
+  (重启中、页面连接断了)也从浏览器的 `TypeError: Failed to fetch` 变成同一句;而主动取消(切分类时)
+  仍被静默忽略,不会冒出一条假故障。
+
 ## [2.0.2] - 2026-10-05
 
 ### 变更
@@ -123,6 +148,7 @@ MIT。面板中的技能来自 SkillHub,由各自作者发布,**版权归原作�
 
 本项目的更新日志以中文撰写。英文发布说明见每个 GitHub Release 页面。
 
+[2.0.3]: https://github.com/montersy123/dsh-skill-market/releases/tag/v2.0.3
 [2.0.2]: https://github.com/montersy123/dsh-skill-market/releases/tag/v2.0.2
 [2.0.1]: https://github.com/montersy123/dsh-skill-market/releases/tag/v2.0.1
 [2.0.0]: https://github.com/montersy123/dsh-skill-market/releases/tag/v2.0.0
