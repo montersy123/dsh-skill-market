@@ -93,11 +93,11 @@ state and favourites are all preserved, because that state lives outside the pac
 
 ### Where your data lives
 
-Everything the plugin owns sits in one folder under the profile directory, and nothing is written into DSH's own
-storage:
+Everything the plugin owns sits in DSH's own storages directory — the same place the cost meter keeps its
+ledger — and nothing is written into the profile or into DSH's session storage:
 
 ```
-<profile>/@montersy123-dsh-skill-market/data/
+$DSH_HOME/storages/@montersy123/dsh-skill-market/data/
 ├── panel.json        favourites (with their full records), the installed ledger, category, restart advice
 ├── installed.json    which release each skill was installed from
 └── skills/           disabled skills, moved here whole so the Harness cannot see them
@@ -106,8 +106,15 @@ storage:
 Enabled skills are not in this folder — they live in the Harness's own skill root, `$DSH_HOME/skills`. The
 panel's switch moves a directory between the two, so "enabled" is a location, not a flag.
 
-The desktop profile defaults to `%USERPROFILE%\.dsh\profiles\desktop`. To back up or move your settings, copy that
-`data` directory; to start clean, delete it (installed skills live separately, under `$DSH_HOME/skills`).
+`$DSH_HOME` defaults to `%USERPROFILE%\.dsh` and can be overridden by an environment variable. To back up or move
+your settings, copy that `data` directory; to start clean, delete it (installed skills live separately, under
+`$DSH_HOME/skills`).
+
+> The location has moved more than once: an older build kept the panel's state in the page's **Local Storage**
+> (the desktop app's own `%APPDATA%\@deepseek-ai\dsh-desktop\Local Storage`, shared with every other plugin), and
+> the build after that kept it at `<profile>/@montersy123-dsh-skill-market/data`. **This version reads only
+> `$DSH_HOME/storages/...` and is not compatible with the older places**: when upgrading, move the old `data`
+> directory there — not moving it means starting from nothing.
 
 > Older versions kept the panel's state in the page's **Local Storage** — that is, DSH desktop's own
 > `%APPDATA%\@deepseek-ai\dsh-desktop\Local Storage`, shared with every other plugin. The first time the panel

@@ -107,51 +107,17 @@ if (!apply) {
   process.exit(0)
 }
 
-// 0. Adopt the version record still sitting in an older location, BEFORE the package is replaced.
-//
-//    The record has moved with the plugin: once inside `<package>/data`, then at
-//    `$DSH_HOME/skill-market/data`, now under the profile next to the publisher scope. A move that is
-//    not adopted leaves the panel unable to say which release a skill was installed from.
-//
-//    The store of disabled skills is deliberately not part of this: its name has settled
-//    (`data/skills`), and no compatibility is kept for the directory names it had before, so nothing
-//    here reads an older spelling.
+// 0. The plugin's state — the version record and the parked-skill store — lives in
+//    `$DSH_HOME/storages/@montersy123/dsh-skill-market/data`, which is outside both the package and the
+//    profile, so replacing the package cannot touch it and there is nothing to carry over here. An
+//    earlier build kept it beside the profile under a flattened name; that location is not read any
+//    more, so this script does not look for it either — moving it is a person's one-time step.
 const stateRoot = join(
-  process.env.DSH_PROFILE_DIR ?? join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'profiles', 'desktop'),
-  '@montersy123-dsh-skill-market', 'data',
+  process.env.DSH_HOME ?? join(homedir(), '.dsh'),
+  'storages', '@montersy123', 'dsh-skill-market', 'data',
 )
 /** The store's name, kept in step with the plugin's own `PARKED_DIRECTORY`. */
 const STORE = 'skills'
-const profileDir = process.env.DSH_PROFILE_DIR
-  ?? join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'profiles', 'desktop')
-/** Where earlier builds kept the version record, oldest first. */
-const olderRecords = [
-  join(TARGET, 'data', 'installed.json'),
-  join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'skill-market', 'data', 'installed.json'),
-  join(profileDir, 'montersy123', 'skill-market', 'data', 'installed.json'),
-  join(profileDir, '@montersy123', 'skill-market', 'data', 'installed.json'),
-  join(profileDir, '@montersy123-skill-market', 'data', 'installed.json'),
-].filter((record) => resolve(record) !== resolve(join(stateRoot, 'installed.json')))
-
-const adopted = []
-for (const older of olderRecords) {
-  if (existsSync(older) === false) continue
-  if (existsSync(join(stateRoot, 'installed.json'))) break
-  mkdirSync(stateRoot, { recursive: true })
-  cpSync(older, join(stateRoot, 'installed.json'))
-  adopted.push('installed.json')
-  console.log(`adopted the version record from ${older}`)
-  rmSync(older, { force: true })
-  // Walk up while each level is empty, so `montersy123/` and `skill-market/` go too: an empty
-  // tree that looks like state is worse than no tree. The data directory itself is never removed —
-  // it also holds the panel's own state, and an empty-looking shell is not this loop's business.
-  let shell = dirname(older)
-  while (resolve(shell) !== resolve(profileDir) && resolve(shell) !== resolve(stateRoot)
-    && existsSync(shell) && readdirSync(shell).length === 0) {
-    rmSync(shell, { recursive: true, force: true })
-    shell = dirname(shell)
-  }
-}
 
 // 1. Pack. The manifest's `files` list decides the contents, so runtime state under
 //    `data/` is excluded by construction. The destination must exist: `npm pack` writes

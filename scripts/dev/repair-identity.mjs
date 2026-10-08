@@ -11,8 +11,10 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const recordPath = join(
-  process.env.DSH_PROFILE_DIR ?? join(process.env.DSH_HOME ?? '', 'profiles', process.env.DSH_PROFILE ?? ''),
-  '@montersy123-dsh-skill-market',
+  process.env.DSH_HOME ?? '',
+  'storages',
+  '@montersy123',
+  'dsh-skill-market',
   'data',
   'installed.json',
 )

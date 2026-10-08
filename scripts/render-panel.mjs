@@ -289,7 +289,7 @@ window.fetch = async (url, init = {}) => {
           }]
         return {
           root: 'C:\\Users\\tester\\.dsh\\skills',
-          disabledRoot: 'C:\\Users\\tester\\.dsh\\profiles\\desktop\\@montersy123-dsh-skill-market\\data\\skills',
+          disabledRoot: 'C:\\Users\\tester\\.dsh\\storages\\@montersy123\\dsh-skill-market\\data\\skills',
           skills: [...market, ...local, ...handCopied],
           disabled: [],
         }

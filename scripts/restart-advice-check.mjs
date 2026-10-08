@@ -102,7 +102,7 @@ async function run(options) {
         ok: true,
         status: 200,
         async json() {
-          return { root: 'C:\\Users\\tester\\.dsh\\skills', disabledRoot: 'C:\\Users\\tester\\.dsh\\profiles\\desktop\\@montersy123-dsh-skill-market\\data\\skills', skills: ON_DISK, disabled: [] }
+          return { root: 'C:\\Users\\tester\\.dsh\\skills', disabledRoot: 'C:\\Users\\tester\\.dsh\\storages\\@montersy123\\dsh-skill-market\\data\\skills', skills: ON_DISK, disabled: [] }
         },
       }
     }

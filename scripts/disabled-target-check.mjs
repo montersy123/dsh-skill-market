@@ -2,7 +2,7 @@
  * Lock down that install and uninstall agree on where a disabled skill lives.
  *
  * Disabled state in this plugin IS a location: enabled skills are under `$DSH_HOME/skills`, disabled
- * ones in the plugin's own store, `<profile>/@montersy123-dsh-skill-market/data/skills`. Every
+ * ones in the plugin's own store, `$DSH_HOME/storages/@montersy123/dsh-skill-market/data/skills`. Every
  * operation that touches files must therefore resolve the same way, because two of them disagreeing is
  * a silent state corruption — an install that re-enables a skill the user disabled, or an uninstall
  * that removes one copy and leaves another that the next scan will find.
@@ -155,7 +155,6 @@ const storeRoot = mod.disabledRootForTest()
 const staleStoreName = join(mod.pluginDataRootForTest(), 'disabled')
 mkdirSync(join(staleStoreName, NAME), { recursive: true })
 writeFileSync(join(staleStoreName, NAME, 'SKILL.md'), '---\nname: dev-expert\ndescription: stale\n---\n\nbody\n')
-await mod.migratePluginDataForTest()
 expect(existsSync(join(storeRoot, NAME)) === false, 'a store under an older name is not adopted')
 const staleRows = await mod.scanInstalledForTest()
 expect(staleRows.some((row) => row.directoryName === NAME) === false,

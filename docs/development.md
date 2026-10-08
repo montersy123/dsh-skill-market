@@ -290,7 +290,8 @@ Host 报告的是清单响应里的 `version`,也就是**真正写下去的那�
 
 ## 运行时状态必须放在包外
 
-启用 = 在 `$DSH_HOME/skills`；停用 = 在 **`<profile>/@montersy123-dsh-skill-market/data/skills`**。
+启用 = 在 `$DSH_HOME/skills`；停用 = 在
+**`$DSH_HOME/storages/@montersy123/dsh-skill-market/data/skills`**。
 所以**任何动文件的操作都必须用同一套定位规则**，否则两边会各说各话：
 
 | 操作 | 行为 |
@@ -307,8 +308,7 @@ Host 报告的是清单响应里的 `version`,也就是**真正写下去的那�
 
 ### 状态目录的三个选择
 
-`<profile>/@montersy123-dsh-skill-market/data`，路径由 `DSH_PROFILE_DIR` 决定（缺失时用 `DSH_HOME`
-加 `DSH_PROFILE` 推出同样的布局）：
+`$DSH_HOME/storages/@montersy123/dsh-skill-market/data`：
 
 **① 在包外。** 停用库和安装记录一度放在 `<package>/data`，**任何替换包目录的动作都会把它删掉**
 —— `pnpm install`、手动重装、中断的升级、以及本插件自己的安装器。后果是**所有已停用的技能全部
@@ -317,12 +317,14 @@ Host 报告的是清单响应里的 `version`,也就是**真正写下去的那�
 > 在安装器里加一段「先备份、后还原」只是**碰巧能用**的补丁：它只在所有人都记得执行时才成立，
 > 而上面每条路径都能绕开它。把状态搬出包外，这个风险是**结构性消失**的，不依赖任何脚本的自觉。
 
-**② 按 profile 隔离。** DSH 自己的一等插件状态就是这么做的（`.dsh-market`、`.plugin-manager`），
-而且这是诚实的范围：每个 profile 有各自的 `node_modules`，同一个插件可以分别安装，设置也不必一致。
+**② 放在 `$DSH_HOME/storages` 下。** 这是 DSH 存放「插件自有状态」的地方 —— `dsh-cost-meter`
+的账本就在 `storages/cost-meter/ledger.json`，所以这不是新造的位置。它以前在 profile 目录里
+（`<profile>/@montersy123-dsh-skill-market/`），现在是 **DSH home 级、不分 profile**：同一个 home 下
+同时跑 `desktop` 与 `web`，收藏与账本是**同一份**。这是有意的取舍（状态跟着"这个 home 里装了什么"
+走，而不是跟着"从哪个入口打开"走），代价是这两个 profile 的偏好不再各自独立。
 
-**③ 用包名，压成一段。** `@montersy123-dsh-skill-market` 就是已发布包名
-`@montersy123/dsh-skill-market` 把分隔符压平，所以这个目录能直接追溯到拥有它的包，既不会与别的
-发布者冲突，也不会多出一层只为装一个子目录而存在的嵌套。
+**③ 用包名的两段。** `@montersy123`，然后 `dsh-skill-market`：路径本身说明是哪个包拥有它，scope 是
+一层目录，而不是把分隔符压平塞进名字里。
 
 ### 目录名的历史，以及为什么现在**不做**兼容
 
@@ -339,24 +341,36 @@ $DSH_HOME/skill-market/data/disabled               （搬出包外）
 <profile>/@montersy123-dsh-skill-market/data/skills    （现在：skills）
 ```
 
-这些位置**现在都不再被收养**。目录名已经定下来（`data/skills`），代码只读这一个目录，旧名字下
-留下的目录就是「没人读的另一个目录」—— 面板既不会列出它，也不会把它搬过来。这样做是有意的：
-`disabled` 作为**目录名**既不直观、也不说明里面装的是什么，留着它做兼容等于让旧名字长期活在代码里。
+存放位置本身也搬过多次：
 
-**改的只是目录名。** 面板里的「启用 / 停用」、`enabled` / `disabled`、`/installed` 返回的
-`disabledRoot`、日志里那句 `enabled|disabled` —— 这些**状态词一个都没动**。它们说的是技能是开
-还是关，和文件放在哪个目录无关。
+```
+<package>/data                                          （放进包内）
+$DSH_HOME/skill-market/data                             （搬出包外）
+<profile>/@montersy123/skill-market/data                （profile 级，嵌套式）
+<profile>/montersy123/skill-market/data                 （纯用户名的中间形态）
+<profile>/@montersy123-skill-market/data                （发布者+插件）
+<profile>/@montersy123-dsh-skill-market/data            （压平的包名）
+$DSH_HOME/storages/@montersy123/dsh-skill-market/data   （现在）
+```
 
-代价说清楚：**从旧版本升上来、且当时有停用技能的人，需要自己把 `<data>/disabled/*` 挪进
-`<data>/skills/`**，否则那些技能在面板里不显示（文件还在磁盘上，没被删）。作者本人的数据由
-作者自行清理，这条路径不再有代码维护。
+**这些位置现在都不再被读**，包括最后那个 profile 目录：代码只读 `storages` 下这一处。版本记录
+（`installed.json`）也不再从旧位置收养 —— 做这件事的 `migratePluginData()` 已随这次搬迁删除。
+旧位置留下的目录就是「没人读的另一个目录」。
+
+代价说清楚：**从旧版本升上来的人需要自己把旧的 `data` 目录整个搬到新位置**
+（`panel.json`、`installed.json`、`skills/` 三样一起），不搬就是从零开始 —— 收藏、账本、停用状态
+都会看起来不见了（文件还在磁盘上，没被删）。这条路径不再有代码维护。
+
+**这一轮改的只是"文件放在哪"。** 面板里的「启用 / 停用」、`enabled` / `disabled`、`/installed`
+返回的 `disabledRoot`、日志里那句 `enabled|disabled` —— 这些**状态词一个都没动**。它们说的是技能
+是开还是关，和文件放在哪个目录无关。上一轮把停用库的目录名从 `disabled` 改成 `skills`，同样只动
+了目录名。
 
 名字只来自 `PARKED_DIRECTORY`（`lib/index.js` 顶部）一个常量：`ensureStateTree()`、扫描、启停
 都从它取，改一处就够。`installed-copy-check.mjs` 钉住它等于 `skills`，并钉住代码里**没有**任何
 旧的目录名；`disabled-target-check.mjs` 则断言旧名字下的目录**不会被**收养，防止它悄悄回来。
-
-**版本记录（`installed.json`）仍然收养**：它决定面板能不能说出「这个技能装的是哪一版」，和目录
-叫什么名字无关。它自己的历史位置见 `migratePluginData()` 的注释。
+`state-root-check.mjs` 用临时 `DSH_HOME` 跑一遍真实公式，钉住状态根就是
+`storages/@montersy123/dsh-skill-market/data`、且不在任何 profile 目录下。
 
 ### `data/` 与 `data/skills` 都常驻，不清理
 
@@ -378,14 +392,14 @@ $DSH_HOME/skill-market/data/disabled               （搬出包外）
 ### 面板自己的状态也在这个目录里：`data/panel.json`
 
 浏览器半（面板）的持久化状态——收藏（id 数组 + 完整记录）、已安装账本、类目偏好、待重启提示
-——同样放在 `<profile>/@montersy123-dsh-skill-market/data/panel.json`，与 `installed.json`、
+——同样放在 `$DSH_HOME/storages/@montersy123/dsh-skill-market/data/panel.json`，与 `installed.json`、
 `skills/` 并列。
 
 它以前放在页面的 **Web Storage** 里。那个存储**不是本插件的**：桌面端下它是
 `%APPDATA%\@deepseek-ai\dsh-desktop\Local Storage` 下的一个 LevelDB，与 DSH 自己的键、以及
 每个别的插件**共用一份**，按 **origin** 而不是按插件寻址。于是插件的数据躺在 DSH 的数据里、
-卸载插件不会带走它、用户也找不到自己的收藏去了哪。私有目录没有这些问题：按 profile 隔离、
-换包不丢、可以被用户查看/备份/删除。
+卸载插件不会带走它、用户也找不到自己的收藏去了哪。私有目录没有这些问题：换包不丢、
+可以被用户查看/备份/删除。
 
 | 端点 | 作用 |
 |---|---|

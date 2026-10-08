@@ -41,7 +41,8 @@ const checks = [
   ['host matches source', (host) => host === readFileSync('lib/index.js', 'utf8')],
   ['creates the state tree', (host) => host.includes('ensureStateTree')],
   ['no longer prunes state', (host) => host.includes('pruneEmptyDataRoot') === false],
-  ['state dir is the package name', (host) => host.includes("'@montersy123-dsh-skill-market'")],
+  ['state lives under $DSH_HOME/storages, by the package\'s two segments', (host) => host.includes("const STORAGE_SEGMENTS = ['@montersy123', 'dsh-skill-market']")
+    && host.includes("join(dshHome(), 'storages', ...STORAGE_SEGMENTS)")],
   // The disabled skills live in the plugin's own store, beside the install record, and the store is
   // read under that one name: no older spelling is kept, so no directory but `skills` is ever read.
   ['disabled skills live in data/skills', (host) => host.includes("const PARKED_DIRECTORY = 'skills'")
