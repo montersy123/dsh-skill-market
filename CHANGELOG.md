@@ -6,10 +6,6 @@
 
 ### 变更
 
-- **包名改为不带 scope 的 `dsh-skill-marketplace`。** 原本想直接叫 `dsh-skill-market`,但那个名字在 npm
-  上已归别的发布者(`pn1024`),所以换成确认空闲的 `dsh-skill-marketplace`;安装命令与
-  `cordis.patch.yml` 里那一行插件名一起改了。**数据目录不变**:仍是
-  `$DSH_HOME/storages/@montersy123/dsh-skill-market/data`,与包名无关,升级不用搬任何东西。
 - **声明宿主版本要求。** dshmarket 的市场列表会读 `engines.dsh`,所以补上了
   `"dsh": ">=0.2.0-rc.2"`,并在 `dsh.compatibility.dshReleases` 里标明 `0.2.0-rc.2` 与 `0.2.1-rc.2`
   为 compatible。低于下限的宿主会得到明确的 incompatible 判定,而不是"未声明宿主要求"。
@@ -17,14 +13,8 @@
   现在入口是一枚**闪电**(技能 = 能力),插件图标是**品牌蓝圆角块 + 同一枚白色闪电**,两者视觉一致。
   插件图标用的是实色(`#1779e1`),因为它在插件列表里是按图片渲染的,`currentColor` 在深色下会变黑看不见。
 
-### 升级(包名变了,不能就地升级)
-
-```sh
-dsh plugin --profile desktop remove @montersy123/dsh-skill-market
-dsh plugin --profile desktop add dsh-skill-marketplace
-```
-
-装完重启。旧的 scoped 包在 npm 上已弃用(deprecated),只留给还钉在旧名上的 profile。
+包名保持 `@montersy123/dsh-skill-market` 不变(这个名字改过一次又撤回了:不带 scope 的
+`dsh-skill-market` 已归 `pn1024`,换算名字的迁移成本也不划算)。
 
 ## [2.0.3] - 2026-10-05
 

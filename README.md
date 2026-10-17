@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/montersy123/dsh-skill-market/stargazers"><img src="https://img.shields.io/github/stars/montersy123/dsh-skill-market?style=social" alt="GitHub stars"></a>
-  <a href="https://www.npmjs.com/package/dsh-skill-marketplace"><img src="https://img.shields.io/npm/v/dsh-skill-marketplace?logo=npm&color=cb3837" alt="npm 版本"></a>
+  <a href="https://www.npmjs.com/package/@montersy123/dsh-skill-market"><img src="https://img.shields.io/npm/v/@montersy123/dsh-skill-market?logo=npm&color=cb3837" alt="npm 版本"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
 </p>
 
@@ -36,7 +36,7 @@
 打开 **DeepSeek Harness → 插件 → 添加插件**,填入 npm 包名:
 
 ```text
-dsh-skill-marketplace
+@montersy123/dsh-skill-market
 ```
 
 点 **安装**。包里的代码就是可运行的 ESM,**不需要任何构建步骤**。这个对话框同样接受 GitHub 仓库地址和本地目录路径。
@@ -51,10 +51,10 @@ dsh-skill-marketplace
 
 ```sh
 # Web 端
-dsh plugin --profile web add dsh-skill-marketplace
+dsh plugin --profile web add @montersy123/dsh-skill-market
 
 # 桌面端
-dsh plugin --profile desktop add dsh-skill-marketplace
+dsh plugin --profile desktop add @montersy123/dsh-skill-market
 ```
 
 这两条从 **npm 官方源**安装,拿到的是已发布的版本。要用仓库 `main` 上还没发布的提交,把包名换回 `github:montersy123/dsh-skill-market` —— pnpm 会把 git 依赖钉在解析到的那一个 commit 上,以后升级还得重新解析,所以日常安装用包名更省事。
@@ -67,7 +67,7 @@ dsh plugin --profile desktop add dsh-skill-marketplace
 dsh --profile web
 ```
 
-想确认这一层真的加载了,可以在启动前 dump 一次配置,输出里应当出现 `# == dsh-skill-marketplace`:
+想确认这一层真的加载了,可以在启动前 dump 一次配置,输出里应当出现 `# == @montersy123/dsh-skill-market`:
 
 ```sh
 dsh --profile web --dump-config

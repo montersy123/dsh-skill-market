@@ -5,9 +5,8 @@
  * store live inside the source checkout. A real copy puts the package — and therefore
  * the state — where every other bundle in this profile lives, under `node_modules`.
  *
- * The package name carries no scope (`dsh-skill-marketplace`), so its directory is one
- * segment: `node_modules/dsh-skill-marketplace`. The install path below splits the name,
- * so it would still be correct if a scope were ever added back.
+ * The package is scoped (`@montersy123/dsh-skill-market`), so its directory is the two
+ * segments pnpm and npm both use: `node_modules/@montersy123/dsh-skill-market`.
  *
  * ## Why the copy is a packed tarball
  *

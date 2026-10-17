@@ -21,7 +21,7 @@ const scratch = mkdtempSync(join(tmpdir(), 'dsh-invalid-name-'))
 process.env.DSH_SKILL_MARKET_TEST_ONLY = '1'
 process.env.DSH_SKILL_MARKET_ROOT = scratch
 
-const mod = await import('dsh-skill-marketplace')
+const mod = await import('@montersy123/dsh-skill-market')
 const SKILL_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 console.log(`  scratch root: ${scratch}`)
