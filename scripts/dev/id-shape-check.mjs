@@ -13,7 +13,7 @@
  *
  *   node --import ./scripts/asar-resolver.mjs scripts/id-shape-check.mjs
  */
-const mod = await import('@montersy123/dsh-skill-market')
+const mod = await import('dsh-skill-marketplace')
 
 const summary = await mod.registryForTest({
   skills: { register: () => () => {} },

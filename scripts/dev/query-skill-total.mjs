@@ -10,7 +10,7 @@ const UPSTREAM = 'https://api.skillhub.cn'
 // `/api/skills` is the listing; `/api/v1/skills/<slug>` is a single skill. Getting that wrong yields a 405, which
 // is how this was found rather than assumed.
 const request = await fetch(`${UPSTREAM}/api/skills?page=1&pageSize=1&sortBy=score&order=desc`, {
-  headers: { 'user-agent': '@montersy123/dsh-skill-market/0.1 (+https://skillhub.cn)' },
+  headers: { 'user-agent': 'dsh-skill-marketplace/0.1 (+https://skillhub.cn)' },
   signal: AbortSignal.timeout(30_000),
 })
 

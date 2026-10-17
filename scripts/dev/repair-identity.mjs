@@ -25,7 +25,7 @@ console.log('  record:', recordPath)
 console.log('  before:', JSON.stringify(read()))
 console.log('')
 
-const mod = await import('@montersy123/dsh-skill-market')
+const mod = await import('dsh-skill-marketplace')
 const outcome = await mod.repairInstallIdentityForTest()
 
 console.log('  repaired  :', outcome.repaired.join(' | ') || '(none)')

@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/montersy123/dsh-skill-market/stargazers"><img src="https://img.shields.io/github/stars/montersy123/dsh-skill-market?style=social" alt="GitHub stars"></a>
-  <a href="https://www.npmjs.com/package/@montersy123/dsh-skill-market"><img src="https://img.shields.io/npm/v/@montersy123/dsh-skill-market?logo=npm&color=cb3837" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/dsh-skill-marketplace"><img src="https://img.shields.io/npm/v/dsh-skill-marketplace?logo=npm&color=cb3837" alt="npm version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
 </p>
 
@@ -36,7 +36,7 @@
 Open **DeepSeek Harness → Plugins → Add plugin** and enter the npm package name:
 
 ```text
-@montersy123/dsh-skill-market
+dsh-skill-marketplace
 ```
 
 Click **Install**. The package is already runnable ESM — **there is no build step**. The same dialog also takes a GitHub repository address or a local directory path.
@@ -51,10 +51,10 @@ Pick the profile for the way you run DSH. **Web** is `web`; the **desktop app** 
 
 ```sh
 # Web
-dsh plugin --profile web add @montersy123/dsh-skill-market
+dsh plugin --profile web add dsh-skill-marketplace
 
 # Desktop app
-dsh plugin --profile desktop add @montersy123/dsh-skill-market
+dsh plugin --profile desktop add dsh-skill-marketplace
 ```
 
 These install from the **npm registry**, so they give you a released version. To run a commit that is on `main` but
@@ -71,7 +71,7 @@ dsh --profile web
 ```
 
 To confirm the layer really loaded, dump the config before starting — the output should contain
-`# == @montersy123/dsh-skill-market`:
+`# == dsh-skill-marketplace`:
 
 ```sh
 dsh --profile web --dump-config

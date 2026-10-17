@@ -530,21 +530,22 @@ node ../scripts/which-version.mjs <handle> <slug>             # 只读：逐文�
 
 ```jsonc
 // ~/.dsh/profiles/desktop/package.json
-"dependencies": { "@montersy123/dsh-skill-market": "file:…/../scripts/dist/montersy123-dsh-skill-market-1.0.0.tgz" },
-"dsh": { "profile": { "bundles": [ /* … */ "@montersy123/dsh-skill-market" ] } }
+"dependencies": { "dsh-skill-marketplace": "file:…/../scripts/dist/montersy123-dsh-skill-market-1.0.0.tgz" },
+"dsh": { "profile": { "bundles": [ /* … */ "dsh-skill-marketplace" ] } }
 ```
 
 ```
-~/.dsh/profiles/desktop/node_modules/@montersy123/dsh-skill-market/   ← 真实目录
+~/.dsh/profiles/desktop/node_modules/dsh-skill-marketplace/   ← 真实目录
 ```
 
 为什么不用 `link:`（早期版本是 junction）：**插件的状态目录当时在它自己的包内**
 （`<package>/data/disabled`，那份状态如今在 profile 下，见「运行时状态必须放在包外」），软链会让这份状态写进源码仓库；而且真实拷贝在
 `node_modules` 里的位置和别的 bundle 完全一致。
 
-包名是 **scoped** 的（`@montersy123/dsh-skill-market`），这样后续通过 npm 安装时不会
-和别人的插件重名。scope 是账户名，所以安装目录是**两层**
-（`node_modules/@montersy123/dsh-skill-market`）—— 脚本按包名拆分路径。
+包名**不带 scope**（`dsh-skill-marketplace`）。原本想直接叫 `dsh-skill-market`，但这个名字在 npm 上已经归
+别的发布者（`pn1024`），所以换了一个确认空闲的名字；到 npm 上安装"不会和别人重名"这件事，是靠**这个名字
+本身唯一**做到的，而不是靠 scope。安装目录因此只有**一层**（`node_modules/dsh-skill-marketplace`）；
+脚本按包名拆分路径，所以将来若再加回 scope 也不用改。
 
 ### 为什么走打包安装
 
@@ -748,8 +749,8 @@ oklch 数值，深色另配一套；`--sm-surface / --sm-accent / --sm-border` �
 # 1. 用真实内核代码走一遍客户端插件的装载 + 激活审计
 #    （@deepseek-ai/dsh-client-modules/lib/client.js 的 arrive/materialize/entries.start）
 $env:DSH_PROFILE_DIR="$env:USERPROFILE\.dsh\profiles\desktop"
-node ../scripts/boot-client-check.mjs @montersy123/dsh-skill-market
-# 期望：ok @montersy123/dsh-skill-market: inject=["slots"] slots=[...] / boot audit: all entries active
+node ../scripts/boot-client-check.mjs dsh-skill-marketplace
+# 期望：ok dsh-skill-marketplace: inject=["slots"] slots=[...] / boot audit: all entries active
 
 # 2. 语法 + 工厂求值 + 渲染冒烟
 node ../scripts/check-client.mjs packages/dsh-skill-market/lib/client.js --react ../scripts/reactsmoke/node_modules
@@ -838,7 +839,7 @@ jsdom 没有排版引擎，**横向溢出和实际列数必须在真实页面里
 2. **一个客户端插件激活失败 = 整个 Web 启动失败。** 桌面端会弹出
    「应用无法启动或已意外停止」并写出
    `%APPDATA%\@deepseek-ai\dsh-desktop\logs\crash-*-web-boot.log`，
-   日志里的 `@montersy123/dsh-skill-market: failed` 就是 `entries.start` 的激活审计结果
+   日志里的 `dsh-skill-marketplace: failed` 就是 `entries.start` 的激活审计结果
    （`s.fiber.state === FAILED`；缺 bundle 才是 `import failed: …`）。
    所以**改动客户端代码后，先在离线脚本里过一遍 boot 审计 + 真实 Cordis 运行时**。
 3. **不要在 Agent 运行期间重启 App。** 这个会话本身跑在同一个 Harness 进程里；

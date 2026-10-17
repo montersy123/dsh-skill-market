@@ -50,7 +50,7 @@ const dirty = []
 for (const script of scripts) {
   const args = []
   // The two scripts that need special arguments, so this probe actually runs them.
-  if (script === 'boot-client-check.mjs') args.push('@montersy123/dsh-skill-market')
+  if (script === 'boot-client-check.mjs') args.push('dsh-skill-marketplace')
   if (script === 'render-panel.mjs') args.push('--fixture', 'tests/fixture', '--viewport', '1440x900')
   const needsResolver = ['skills-provider-check.mjs', 'candidate-contract-demo.mjs', 'cordis-client-check.mjs'].includes(script)
   const nodeArgs = needsResolver ? ['--import', './scripts/asar-resolver.mjs', join('tests', script)] : [join('tests', script)]

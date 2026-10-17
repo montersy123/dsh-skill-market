@@ -2,6 +2,27 @@
 
 本文件记录每个版本的变更。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.0.4] - 2026-10-17
+
+### 变更
+
+- **包名改为不带 scope 的 `dsh-skill-marketplace`。** 原本想直接叫 `dsh-skill-market`,但那个名字在 npm
+  上已归别的发布者(`pn1024`),所以换成确认空闲的 `dsh-skill-marketplace`;安装命令与
+  `cordis.patch.yml` 里那一行插件名一起改了。**数据目录不变**:仍是
+  `$DSH_HOME/storages/@montersy123/dsh-skill-market/data`,与包名无关,升级不用搬任何东西。
+- **声明宿主版本要求。** dshmarket 的市场列表会读 `engines.dsh`,所以补上了
+  `"dsh": ">=0.2.0-rc.2"`,并在 `dsh.compatibility.dshReleases` 里标明 `0.2.0-rc.2` 与 `0.2.1-rc.2`
+  为 compatible。低于下限的宿主会得到明确的 incompatible 判定,而不是"未声明宿主要求"。
+
+### 升级(包名变了,不能就地升级)
+
+```sh
+dsh plugin --profile desktop remove @montersy123/dsh-skill-market
+dsh plugin --profile desktop add dsh-skill-marketplace
+```
+
+装完重启。旧的 scoped 包在 npm 上已弃用(deprecated),只留给还钉在旧名上的 profile。
+
 ## [2.0.3] - 2026-10-05
 
 ### 变更
@@ -148,6 +169,7 @@ MIT。面板中的技能来自 SkillHub,由各自作者发布,**版权归原作�
 
 本项目的更新日志以中文撰写。英文发布说明见每个 GitHub Release 页面。
 
+[2.0.4]: https://github.com/montersy123/dsh-skill-market/releases/tag/v2.0.4
 [2.0.3]: https://github.com/montersy123/dsh-skill-market/releases/tag/v2.0.3
 [2.0.2]: https://github.com/montersy123/dsh-skill-market/releases/tag/v2.0.2
 [2.0.1]: https://github.com/montersy123/dsh-skill-market/releases/tag/v2.0.1
