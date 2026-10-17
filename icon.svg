@@ -1,5 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5z"/>
-  <path d="M4 8.5 12 13l8-4.5M12 13v7"/>
-  <path d="M9.6 6.4 17.6 11"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="Skill Market">
+  <!--
+    A skill mark rather than a parcel: the previous icon was a box outline, which is what every package
+    looks like, while this entry holds skills. The tile is the plugin's own accent
+    (oklch(58% 0.18 255), converted to #1779e1); the bolt is the same shape as the sidebar glyph
+    (`i-skill` in lib/client.js), so the plugin list and the sidebar entry match.
+
+    Colours are explicit on purpose. The plugin manager renders this through <img>, where `currentColor`
+    resolves to black in both themes — it would vanish on the dark list.
+  -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1779e1"/>
+      <stop offset="1" stop-color="#004fbf"/>
+    </linearGradient>
+  </defs>
+  <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="url(#tile)"/>
+  <path d="M14.1 4.6 6.9 15.2h4.6l-1 5.6 7.2-10.6h-4.6z" fill="#ffffff" fill-opacity="0.97"
+        stroke="#ffffff" stroke-opacity="0.97" stroke-width="0.6" stroke-linejoin="round"/>
 </svg>
