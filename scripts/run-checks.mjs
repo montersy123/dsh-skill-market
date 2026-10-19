@@ -44,6 +44,9 @@ const CHECKS = [
   ['node', ['scripts/pack-encoding-check.mjs']],
   ['node', ['scripts/publish-check.mjs']],
   ['node', ['scripts/installed-copy-check.mjs']],
+  // `/build` is how a panel that looks unchanged is diagnosed from outside, so the numbers it reports have to
+  // match the files they describe.
+  ['node', ['scripts/build-fingerprint-check.mjs']],
   // Behaviour, over a real HTTP server or a rendered panel.
   ['node', ['scripts/route-check.mjs']],
   ['node', ['scripts/state-root-check.mjs']],
