@@ -6,11 +6,35 @@
 
 ## 1. 一句话现状
 
-- 仓库：`D:\DshProjects\dsh-skill-market`，分支 `main`，最新提交 `af953a0`（`release: v2.0.5`）。
+- 仓库：`D:\DshProjects\dsh-skill-market`，分支 `main`，最新提交 `f3914f7`（`fix: never treat an unreadable state
+  file as an empty one`，已推但**未发布**）。
 - 已发布：`@montersy123/dsh-skill-market@2.0.5`（npm `latest`，provenance 已上传），tag `v2.0.5`，
   GitHub Release 同 tag。CI：[publish #39212483636](https://github.com/montersy123/dsh-skill-market/actions/runs/39212483636)。
 - 全部检查通过：`npm test` **34/34**；渲染断言 `scripts/verify-render.mjs` **57 条**。
-- **唯一未解决**：表格单元格里「链接 + 纯文本」混合时，链接在面板里不显示为链接（详见第 6 节）。
+- **唯一未解决的产品问题**：表格单元格里「链接 + 纯文本」混合时，链接在面板里不显示为链接（详见第 6 节）。
+- **已修的严重问题（待发版）**：读不到 `panel.json` 时会被当成“空文档”，下一次写入会覆盖掉收藏
+  （见第 10 节「数据丢失事故」）。这个修复现在只在本机 profile 里，**2.0.6 尚未发布**。
+
+## 10. 数据丢失事故（2026-10-19，务必读）
+
+**症状**：用户发现自己收藏夹空了，`panel.json` 的 `saved: []`、`savedSkills: {}`。
+
+**根因（已修）**：`readPanelState()` 把「文件不存在」和「读失败/不是合法 JSON」都返回 `null`；
+`GET /state` 于是回 `200 {state: null}`；面板把它当成“从未存过”，采纳空默认值，mount 后的派生状态一写回，
+就把真文档覆盖成空文档。Windows 上文件被占用（rename 重试窗口、杀软扫描）很容易触发一次读失败。
+
+**修复（`f3914f7`）**：
+1. `readPanelState()` 只有 **ENOENT** 才返回 `null`，其它一律抛错；`GET /state` 报 **5xx**，面板据此
+   **不写盘**（`panelPersistenceBlocked`），保留内存副本，等下次成功读取再恢复持久化；
+2. `writePanelState()` 在替换前把旧文档复制成 `panel.json.bak`（尽力而为），一次坏写只损失一次变更；
+3. `scripts/panel-live-check.mjs` 增加两条回归：损坏文件 → 5xx 且应答里没有可采纳的文档；写入后 `.bak` 存在且完整。
+
+**恢复**：旧收藏**没有任何副本可恢复**（已搜过 `~/.dsh` 下所有 `panel.json`、以及 Electron 的 localStorage，
+均无）。只能手工重新收藏。今后若再丢，先看同目录的 `panel.json.bak`。
+
+**教训**：排查期间反复让用户「刷新页面」会放大这个竞态。以后让用户刷新前，先确认“读失败不会导致写覆盖”这类
+不变量。
+
 
 ## 2. 环境与路径（每次都会用到）
 
