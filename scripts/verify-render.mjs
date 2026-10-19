@@ -104,6 +104,12 @@ const assertions = [
   ['closing the dialog leaves the tree in place', () => report.interactions?.previewClosed === true && report.interactions?.treeRestored === true],
   ['Escape closes the dialog without closing the drawer', () => report.interactions?.escapeClosedDialog === true
     && report.interactions?.escapeKeptDrawer === true],
+  // The host ships a markdown renderer and a shiki-backed code block; the dialog hands both to it, so a
+  // preview has real markdown and real syntax colours instead of the plain text it used to show.
+  ['markdown files render through the host markdown renderer', () => report.interactions?.previewUsesHostMarkdown === true],
+  ['code files render through the host code block, with their language', () => report.interactions?.codeFileFound === true
+    && report.interactions?.codeBlockLang === 'python'
+    && report.interactions?.codePreviewClosed === true],
   // A file preview belongs to one file *of one skill*. Keyed by `<version>:<path>` alone, the second
   // skill's 文件 tab was a cache hit on the first skill's `SKILL.md` and rendered its text — the stub
   // names the skill it served, so a mix-up is visible at all.

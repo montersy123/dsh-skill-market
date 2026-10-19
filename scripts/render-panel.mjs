@@ -477,6 +477,19 @@ new Function('window', 'document', 'console', bundle)(
 const registration = registrations[0] ?? window.__ModuleLoader__.pendingQueue[0]
 const moduleExports = registration.factory((specifier) => {
   if (specifier === 'react') return React
+  // The host's renderer is a static module in the real boot. Markers stand in for it here, because the
+  // real components need the shell's shiki chunks and its `--shiki-*` palette — neither exists in jsdom.
+  // What this proves is the delegation: the panel hands markdown and code to the host when it is there,
+  // and names the language the extension implies.
+  if (specifier === '@deepseek-ai/dsh-client-ui-primitives') {
+    return {
+      MarkdownText: ({ text }) => React.createElement('div', { className: 'host-markdown-stub' }, text),
+      CodeBlock: ({ code, lang }) => React.createElement('pre', {
+        className: 'host-code-stub',
+        'data-lang': lang ?? '',
+      }, React.createElement('code', null, code)),
+    }
+  }
   throw new Error(`unsupported external: ${specifier}`)
 })
 
@@ -1385,6 +1398,9 @@ if (argv.includes('--interactions')) {
   // Markdown renders as elements; anything else stays verbatim in a <pre>.
   interactions.previewMarkdownHeading = host.querySelector('.sm-md h3, .sm-md h4')?.textContent ?? null
   interactions.previewIsVerbatim = host.querySelector('.sm-preview-code') !== null
+  // A markdown file goes through the host's renderer, which is what gives the dialog real markdown
+  // instead of the plain text it used to show.
+  interactions.previewUsesHostMarkdown = host.querySelector('.sm-preview-dialog .host-markdown-stub') !== null
   interactions.previewTreeVisibleBehind = host.querySelectorAll('.sm-tree-row').length > 0
   // jsdom has no layout engine — every `getBoundingClientRect` is zero — so "bigger than the drawer" is
   // read from the stylesheet's own declarations, and "not inside the drawer" from the tree.
@@ -1419,6 +1435,33 @@ if (argv.includes('--interactions')) {
   })
   interactions.escapeClosedDialog = host.querySelector('.sm-preview-layer') === null
   interactions.escapeKeptDrawer = host.querySelector('.sm-inspector.open') !== null
+  // A code file goes through the host's code block with the language its extension implies — that is what
+  // gives the dialog shiki colours instead of a plain <pre>. Directories start collapsed, so `scripts`
+  // is opened first to reach the file.
+  const scriptsDir = Array.from(host.querySelectorAll('.sm-tree-dir'))
+    .find((row) => (row.querySelector('.sm-tree-name')?.textContent ?? '') === 'scripts')
+  interactions.scriptDirFound = scriptsDir !== undefined
+  if (scriptsDir !== undefined) {
+    await act(async () => {
+      scriptsDir.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }))
+      await settle()
+    })
+  }
+  const codeFile = Array.from(host.querySelectorAll('button.sm-tree-file'))
+    .find((button) => (button.querySelector('.sm-tree-name')?.textContent ?? '') === 'run.py')
+  interactions.codeFileFound = codeFile !== undefined
+  if (codeFile !== undefined) {
+    await act(async () => {
+      codeFile.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }))
+      await settle()
+    })
+  }
+  interactions.codeBlockLang = host.querySelector('.sm-preview-dialog .host-code-stub')?.getAttribute('data-lang') ?? null
+  await act(async () => {
+    host.querySelector('.sm-preview-head .sm-btn')?.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }))
+    await settle()
+  })
+  interactions.codePreviewClosed = host.querySelector('.sm-preview-layer') === null
 
   interactions.clickVersions = await clickTab('版本历史')
   interactions.versionRows = host.querySelectorAll('.sm-version-row').length
