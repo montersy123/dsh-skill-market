@@ -1523,11 +1523,11 @@ if (argv.includes('--interactions')) {
     const link = host.querySelector('.sm-preview-dialog [class*="fileLink"]')
     return link === null ? null : window.getComputedStyle(link).borderBottomStyle
   })()
-  // jsdom does not expand `border-bottom: 0` into a longhand, so the rule itself is read as well: it must
-  // carry the accent colour and no border, which is "highlighted, not underlined".
+  // The rule is structural — every button in the preview body is a file link — so it is read from the sheet
+  // rather than from a class the shell generates: it must carry the accent colour and no permanent underline.
   interactions.markdownFileLinkRule = (() => {
     const css = window.document.head.querySelector('style')?.textContent ?? ''
-    const rule = /\[class\*="fileLink"\][^{]*\{([^}]*)\}/.exec(css)?.[1] ?? ''
+    const rule = /\.sm-preview-body button[^{]*\{([^}]*)\}/.exec(css)?.[1] ?? ''
     return {
       accent: /color:\s*var\(--sm-accent\)/.test(rule),
       border: /border-bottom/.test(rule),
