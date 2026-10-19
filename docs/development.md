@@ -181,6 +181,9 @@ handle 与 slug，所以详情按钮走同一个抽屉。
   （抽屉的 Esc 处理在弹框打开时让位，否则读者会丢掉在树里的位置）；
 - `.md` / `.markdown` 交给**宿主自己的 markdown 渲染器**（`@deepseek-ai/dsh-client-ui-primitives` 的
   `MarkdownText`，与对话里同一套）；该包不在构建里时退回本面板自己的小渲染器
+- **概述页签的「简介」走同一个渲染器**（包在 `.sm-prose` 里）。它原来是纯 `<p>`，所以上游描述里的
+  表格、加粗都不渲染 —— 表格是宿主渲染器才有的能力（`div.md-table-scroll > table`，≥4 列切宽表模式，
+  支持列对齐）；本面板的兜底渲染器只做标题/列表/代码/链接，**不画表格**
 - 其他文件交给宿主的 **`CodeBlock`**：shiki 高亮，配色是主题里的 `--shiki-*`（浅/深两套，定义在
   `@deepseek-ai/dsh-client-ui-theme`），语言由扩展名推断（`py`→python、`sh`→bash……见
   `CODE_LANGUAGES`）；推断不出就按纯文本渲染，不猜语法

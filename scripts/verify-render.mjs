@@ -107,6 +107,9 @@ const assertions = [
   // The host ships a markdown renderer and a shiki-backed code block; the dialog hands both to it, so a
   // preview has real markdown and real syntax colours instead of the plain text it used to show.
   ['markdown files render through the host markdown renderer', () => report.interactions?.previewUsesHostMarkdown === true],
+  // The summary is markdown too, and tables appear there first — the panel's own renderer cannot draw
+  // them, so this is what keeps a skill's description readable rather than literal pipes.
+  ['the overview summary renders markdown through the host renderer', () => report.interactions?.overviewUsesHostMarkdown === true],
   ['code files render through the host code block, with their language', () => report.interactions?.codeFileFound === true
     && report.interactions?.codeBlockLang === 'python'
     && report.interactions?.codePreviewClosed === true],

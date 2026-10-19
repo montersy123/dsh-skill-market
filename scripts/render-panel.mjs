@@ -1347,6 +1347,9 @@ if (argv.includes('--interactions')) {
   interactions.overviewHeadings = Array.from(host.querySelectorAll('.sm-insp-body h4')).map((element) => element.textContent)
   interactions.overviewInlinesInstruction = host.querySelector('.sm-insp-body .sm-md-frame') !== null
     || host.querySelector('.sm-insp-body .sm-md') !== null
+  // The summary is markdown, and tables appear there first: the host renderer is the only one in this
+  // panel that can draw them, so the panel hands it the summary rather than a plain paragraph.
+  interactions.overviewUsesHostMarkdown = host.querySelector('.sm-insp-body .sm-prose .host-markdown-stub') !== null
   // No pointer at the 文件 tab either: the sections above speak for themselves, and a line
   // explaining where the skill's own document lives was removed on request.
   interactions.overviewHasFilesHint = /「文件」页签/.test(host.textContent ?? '')
