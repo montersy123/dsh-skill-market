@@ -94,6 +94,16 @@ const assertions = [
   ['the installed lookup folds `_` against `-`', () => report.interactions?.installedLookupFoldsUnderscore === true],
   ['reconciliation trusts the Host identity, not the directory name', () => report.interactions?.reconciliationUsesHostIdentity === true],
   ['the sort control renders translated labels', () => (report.interactions?.openingSortOptionLabels ?? [])[0] === '按下载量'],
+  // Reading a file happens in a dialog over the panel, not inside the 560px drawer: that is the whole
+  // point of the change. The widths are read from the stylesheet because jsdom has no layout to measure.
+  ['reading a file opens a dialog wider than the drawer', () => report.interactions?.previewDeclared?.dialogPx > report.interactions?.previewDeclared?.drawerPx],
+  ['the dialog is not inside the drawer, and its layer covers the panel', () => report.interactions?.previewNotInsideDrawer === true
+    && report.interactions?.previewLayerInPanelRoot === true],
+  ['the dialog layer sits above the drawer', () => report.interactions?.previewDeclared?.layerZ > report.interactions?.previewDeclared?.drawerZ],
+  ['the file tree stays visible behind the dialog', () => report.interactions?.previewTreeVisibleBehind === true],
+  ['closing the dialog leaves the tree in place', () => report.interactions?.previewClosed === true && report.interactions?.treeRestored === true],
+  ['Escape closes the dialog without closing the drawer', () => report.interactions?.escapeClosedDialog === true
+    && report.interactions?.escapeKeptDrawer === true],
   // A file preview belongs to one file *of one skill*. Keyed by `<version>:<path>` alone, the second
   // skill's 文件 tab was a cache hit on the first skill's `SKILL.md` and rendered its text — the stub
   // names the skill it served, so a mix-up is visible at all.

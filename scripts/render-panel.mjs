@@ -1375,7 +1375,8 @@ if (argv.includes('--interactions')) {
   interactions.collapseDir = await click('.sm-tree-dir')
   interactions.fileTreeFilesAfterCollapse = host.querySelectorAll('.sm-tree-file').length
 
-  // Clicking a file must show its contents, with a way back to the listing.
+  // Clicking a file reads it in a dialog over the panel — the drawer is 560px wide, and this is the one
+  // action in it that wants more room. The tree stays where it was, behind the dialog.
   interactions.treeIsButtons = host.querySelectorAll('button.sm-tree-file').length
   // Open the root file explicitly: the `.md` stub body is what proves rendering.
   interactions.openFilePreview = await click('button.sm-tree-file')
@@ -1384,9 +1385,40 @@ if (argv.includes('--interactions')) {
   // Markdown renders as elements; anything else stays verbatim in a <pre>.
   interactions.previewMarkdownHeading = host.querySelector('.sm-md h3, .sm-md h4')?.textContent ?? null
   interactions.previewIsVerbatim = host.querySelector('.sm-preview-code') !== null
-  interactions.previewTreeHidden = host.querySelectorAll('.sm-tree-row').length === 0
+  interactions.previewTreeVisibleBehind = host.querySelectorAll('.sm-tree-row').length > 0
+  // jsdom has no layout engine — every `getBoundingClientRect` is zero — so "bigger than the drawer" is
+  // read from the stylesheet's own declarations, and "not inside the drawer" from the tree.
+  interactions.previewDeclared = (() => {
+    const css = window.document.head.querySelector('style')?.textContent ?? ''
+    const escape = (selector) => selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const ruleBody = (selector) => new RegExp(escape(selector) + '\\s*\\{([^}]*)\\}').exec(css)?.[1] ?? ''
+    const widthPx = (selector) => {
+      const value = /width:\s*([^;]+)/.exec(ruleBody(selector))?.[1] ?? ''
+      const capped = /min\(\s*(\d+)px/.exec(value)
+      return Number(capped?.[1] ?? /^(\d+)px/.exec(value.trim())?.[1] ?? 0)
+    }
+    const zIndex = (selector) => Number(/z-index:\s*(\d+)/.exec(ruleBody(selector))?.[1] ?? 0)
+    return {
+      dialogPx: widthPx('.sm-preview-dialog'),
+      drawerPx: widthPx('.sm-inspector'),
+      layerZ: zIndex('.sm-preview-layer'),
+      drawerZ: zIndex('.sm-inspector'),
+    }
+  })()
+  interactions.previewNotInsideDrawer = host.querySelector('.sm-inspector .sm-preview-dialog') === null
+  interactions.previewLayerInPanelRoot = host.querySelector('.sm-preview-layer')?.parentElement === host.querySelector('[data-skill-market]')
   interactions.backToTree = await click('.sm-preview-head .sm-btn')
+  interactions.previewClosed = host.querySelector('.sm-preview-layer') === null
   interactions.treeRestored = host.querySelectorAll('.sm-tree-dir').length > 0
+  // Escape belongs to the dialog, not to the drawer underneath: reopening and pressing it must close the
+  // one without closing the other.
+  interactions.previewReopened = await click('button.sm-tree-file')
+  await act(async () => {
+    window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await settle()
+  })
+  interactions.escapeClosedDialog = host.querySelector('.sm-preview-layer') === null
+  interactions.escapeKeptDrawer = host.querySelector('.sm-inspector.open') !== null
 
   interactions.clickVersions = await clickTab('版本历史')
   interactions.versionRows = host.querySelectorAll('.sm-version-row').length
@@ -1575,7 +1607,8 @@ if (argv.includes('--interactions')) {
     const opened = await openDrawerFor(name)
     await clickTab('文件')
     await click('button.sm-tree-file')
-    interactions.previewOwners[label] = (host.querySelector('.sm-insp-body')?.textContent ?? '').slice(0, 240)
+    // The text now lives in the dialog rather than in the drawer body.
+    interactions.previewOwners[label] = (host.querySelector('.sm-preview-dialog')?.textContent ?? '').slice(0, 240)
     const closeDrawer = host.querySelector('.sm-insp-head .sm-icon-btn')
     if (closeDrawer !== null) {
       await act(async () => {
