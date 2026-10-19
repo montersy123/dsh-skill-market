@@ -153,6 +153,16 @@ const assertions = [
   }],
   // The shell puts a file-type glyph inside a file link; the panel drops it, since the label is the content.
   ['a file link does not carry its type glyph', () => report.interactions?.fileLinkGlyphDisplay === 'none'],
+  // Code inside a markdown document is styled by the panel: an inline span gets its own surface, a border and
+  // a text colour of its own, and a fenced block gets the panel's surface — the shell's prose rules leave both
+  // a shade away from the page, which is what "the code does not stand out" meant.
+  ['markdown code inside a document is given its own surface', () => {
+    const rule = report.interactions?.markdownCodeRule ?? {}
+    return /color:\s*#/.test(rule.code ?? '')
+      && /background:\s*var\(--sm-bg\)/.test(rule.code ?? '')
+      && /border:/.test(rule.code ?? '')
+      && /background:\s*var\(--sm-bg\)/.test(rule.pre ?? '')
+  }],
   // The panel overrides the host's code palette for its own subtree: in a preview the code is the content,
   // and the host's tokens (tuned for prose) washed out. Six declarations is the palette; the string colour is
   // checked not to be the host's (#2f9e44) so this cannot pass on the inherited palette.

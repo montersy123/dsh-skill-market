@@ -1525,6 +1525,14 @@ if (argv.includes('--interactions')) {
       border: /border-bottom/.test(rule),
     }
   })()
+  // Code *inside a markdown document* — inline spans and fenced blocks — is styled by the panel rather than
+  // left to the shell's prose rules, which barely separate it from the sentence around it.
+  interactions.markdownCodeRule = (() => {
+    const css = window.document.head.querySelector('style')?.textContent ?? ''
+    const code = /\[class\*="markdown"\]\s*code\s*\{([^}]*)\}/.exec(css)?.[1] ?? ''
+    const pre = /\[class\*="markdown"\]\s*pre\s*\{([^}]*)\}/.exec(css)?.[1] ?? ''
+    return { code, pre }
+  })()
   // The file-type glyph the shell puts inside such a link is dropped — the label is what the reader scans.
   interactions.fileLinkGlyphDisplay = (() => {
     const glyph = host.querySelector('.sm-preview-dialog [class*="fileLink"] .host-file-glyph')
