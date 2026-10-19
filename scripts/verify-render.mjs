@@ -132,6 +132,26 @@ const assertions = [
       && (interactions.tableAligns ?? [])[1] === 'center'
       && interactions.tableParagraphKept === '导语一段。'
   }],
+  // A document's links point at its neighbours. The host renderer only makes those clickable through the
+  // delegate provider's `openFile`, and the fallback renderer only draws them as buttons when it has a
+  // handler — so both paths are asserted, plus the resolver that keeps the target inside the bundle.
+  ['the dialog gives the host renderer an openFile delegate', () => report.interactions?.delegateProviderUsed === 'yes'],
+  ['following a link inside the dialog opens that file and keeps it open', () => report.interactions?.dialogProbeFound === true
+    && report.interactions?.pathAfterFollowedLink === 'references/deep/notes.md'
+    && report.interactions?.dialogOpenAfterFollowedLink === true],
+  ['the fallback renderer follows a link to a neighbouring file', () => report.interactions?.fallbackLinkIsButton === true
+    && report.interactions?.fallbackLinkOpened === 'references/expert-topics.md'
+    && report.interactions?.fallbackLinkAnchor === 'https://example.com'],
+  ['a bundle link resolves only inside the bundle', () => {
+    const resolved = report.interactions?.linkResolution ?? {}
+    return resolved.sibling === 'references/expert-topics.md'
+      && resolved.up === 'SKILL.md'
+      && resolved.nested === 'references/deep/notes.md'
+      && resolved.anchor === 'SKILL.md'
+      && resolved.absolute === null
+      && resolved.url === null
+      && resolved.escape === null
+  }],
   ['code files render through the host code block, with their language', () => report.interactions?.codeFileFound === true
     && report.interactions?.codeBlockLang === 'python'
     && report.interactions?.codePreviewClosed === true],

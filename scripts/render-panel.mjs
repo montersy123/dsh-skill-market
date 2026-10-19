@@ -488,6 +488,21 @@ const moduleExports = registration.factory((specifier) => {
       // run instead of taking a line of its own.
       MarkdownText: ({ text }) => React.createElement('div', { className: 'host-markdown-stub markdown' },
         React.createElement('p', null, text, React.createElement('svg', { className: 'host-glyph' }))),
+      // The real provider is what makes a link to another file clickable: the host renderer asks it for
+      // `openFile`, and without one it draws such links as plain text. The probe button calls it the way a
+      // link would, so the dialog's own handling (resolve, check the bundle, open) is exercised end to end.
+      MarkdownDelegateProvider: ({ children, openFile }) => React.createElement('div', {
+        className: 'host-delegate-stub',
+        'data-open-file': typeof openFile === 'function' ? 'yes' : 'no',
+      },
+        children,
+        typeof openFile === 'function'
+          ? React.createElement('button', {
+            type: 'button',
+            className: 'probe-open-file',
+            onClick: () => openFile('deep/notes.md'),
+          }, 'probe')
+          : null),
       CodeBlock: ({ code, lang }) => React.createElement('pre', {
         className: 'host-code-stub',
         'data-lang': lang ?? '',
@@ -1428,6 +1443,36 @@ if (argv.includes('--interactions')) {
   interactions.tableParagraphKept = tableScratch.querySelector('p')?.textContent ?? null
   await act(async () => { tableRoot.unmount() })
   tableScratch.remove()
+  // A document links to its neighbours (`references/expert-topics.md`), and the fallback renderer follows
+  // such a link when the caller can open files. The resolver is what keeps that inside the bundle: an
+  // absolute path, a URL or a `..` past the root is not a file of this skill.
+  const linkScratch = window.document.createElement('div')
+  window.document.body.appendChild(linkScratch)
+  const linkRoot = createRoot(linkScratch)
+  const openedLinks = []
+  await act(async () => {
+    linkRoot.render(moduleExports.MarkdownForTest(
+      '见 [工程专题](references/expert-topics.md) 与 [站点](https://example.com)。',
+      (href) => openedLinks.push(href),
+    ))
+  })
+  interactions.fallbackLinkIsButton = linkScratch.querySelector('button.sm-md-ref') !== null
+  interactions.fallbackLinkAnchor = linkScratch.querySelector('a.sm-md-link')?.getAttribute('href') ?? null
+  await act(async () => {
+    linkScratch.querySelector('button.sm-md-ref')?.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }))
+  })
+  interactions.fallbackLinkOpened = openedLinks[0] ?? null
+  await act(async () => { linkRoot.unmount() })
+  linkScratch.remove()
+  interactions.linkResolution = {
+    sibling: moduleExports.resolveBundlePathForTest('SKILL.md', 'references/expert-topics.md'),
+    up: moduleExports.resolveBundlePathForTest('references/guide.md', '../SKILL.md'),
+    nested: moduleExports.resolveBundlePathForTest('references/guide.md', 'deep/notes.md'),
+    absolute: moduleExports.resolveBundlePathForTest('SKILL.md', '/etc/passwd') ?? null,
+    url: moduleExports.resolveBundlePathForTest('SKILL.md', 'https://example.com') ?? null,
+    escape: moduleExports.resolveBundlePathForTest('SKILL.md', '../../outside.md') ?? null,
+    anchor: moduleExports.resolveBundlePathForTest('SKILL.md', 'SKILL.md#L3'),
+  }
   // Clicking a file reads it in a dialog over the panel — the drawer is 560px wide, and this is the one
   // action in it that wants more room. The tree stays where it was, behind the dialog.
   interactions.treeIsButtons = host.querySelectorAll('button.sm-tree-file').length
@@ -1447,6 +1492,20 @@ if (argv.includes('--interactions')) {
     const glyph = host.querySelector('.sm-preview-dialog .markdown svg')
     return glyph === null ? null : window.getComputedStyle(glyph).display
   })()
+  // A document links to its neighbours, and the host renderer only makes those clickable when the delegate
+  // provider carries an `openFile`. The dialog mounts it; the overview, which has no bundle at hand, does not.
+  interactions.delegateProviderUsed = host.querySelector('.sm-preview-dialog .host-delegate-stub')?.getAttribute('data-open-file') ?? null
+  // Following a link inside the dialog switches the file it shows, and keeps the dialog open: reading
+  // around a bundle should not cost a reopen per file.
+  // The probe passes a link relative to the open file (`references/guide.md` + `deep/notes.md`), which is
+  // how a document addresses its neighbours — and the dialog resolves it before opening.
+  interactions.dialogProbeFound = host.querySelector('.sm-preview-dialog .probe-open-file') !== null
+  await act(async () => {
+    host.querySelector('.sm-preview-dialog .probe-open-file')?.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }))
+    await settle()
+  })
+  interactions.pathAfterFollowedLink = host.querySelector('.sm-preview-path')?.textContent ?? null
+  interactions.dialogOpenAfterFollowedLink = host.querySelector('.sm-preview-layer') !== null
   interactions.previewTreeVisibleBehind = host.querySelectorAll('.sm-tree-row').length > 0
   // jsdom has no layout engine — every `getBoundingClientRect` is zero — so "bigger than the drawer" is
   // read from the stylesheet's own declarations, and "not inside the drawer" from the tree.
