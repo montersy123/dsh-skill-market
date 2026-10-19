@@ -144,27 +144,13 @@ const assertions = [
     && report.interactions?.backControlGlyph === 'M14.5 6l-6 6 6 6'
     && report.interactions?.pathAfterBack === 'references/guide.md'
     && report.interactions?.backControlGone === true],
-  // A file link is highlighted, not underlined: the accent colour alone says it goes somewhere, and a
-  // permanent underline under every reference in a table is heavier than the cell's content.
-  ['a file link is highlighted without an underline', () => {
-    const decoration = report.interactions?.markdownFileLinkDecoration
-    const rule = report.interactions?.markdownFileLinkRule ?? {}
-    return (decoration === 'none' || decoration === '') && rule.accent === true && rule.border === false
-  }],
-  // The shell puts a file-type glyph inside a file link; the panel drops it, since the label is the content.
-  ['a file link does not carry its type glyph', () => report.interactions?.fileLinkGlyphDisplay === 'none'],
-  // ...and the colour is written inline as well as by rule: the cascade contest with the shell's own
-  // stylesheet is not one the panel wins by specificity, since the shell ships a colour for the same class.
-  ['a file link is coloured inline as well as by rule', () => /color:\s*var\(--sm-accent\)/.test(report.interactions?.fileLinkInlineColour ?? '')],
-  // The shell renders markdown's elements but its stylesheet does not reach the dialog, so the panel typesets
-  // them itself — which is why a preview used to look unstyled next to the same file opened in DSH.
-  ['the panel typesets host markdown itself', () => {
-    const rule = report.interactions?.markdownCodeRule ?? {}
-    return /font-family:\s*var\(--sm-font-mono\)/.test(rule.code ?? '')
-      // A neutral chip: the panel adds no accent tint of its own here.
-      && /background:\s*var\(--sm-bg\)/.test(rule.code ?? '')
-      && /border:/.test(rule.code ?? '')
-      && /background:\s*var\(--sm-bg\)/.test(rule.pre ?? '')
+  // The panel must not restyle the shell's markdown: an earlier build rewrote its typography, link colours and
+  // hid the file-type glyph the shell draws inside a file link. All of that is gone; only the inline-glyph fix
+  // remains, and the glyph itself has to stay visible.
+  ['the panel does not restyle the shell\'s markdown', () => (report.interactions?.hostMarkdownOverrides ?? []).length === 0],
+  ['a file link keeps the shell\'s type glyph', () => {
+    const display = report.interactions?.fileLinkGlyphDisplay
+    return display !== null && display !== 'none'
   }],
   // The panel overrides the host's code palette for its own subtree: in a preview the code is the content,
   // and the host's tokens (tuned for prose) washed out. Six declarations is the palette; the string colour is

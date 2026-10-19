@@ -1523,28 +1523,18 @@ if (argv.includes('--interactions')) {
     const link = host.querySelector('.sm-preview-dialog [class*="fileLink"]')
     return link === null ? null : window.getComputedStyle(link).borderBottomStyle
   })()
-  // The rule is structural — every button in the preview body is a file link — so it is read from the sheet
-  // rather than from a class the shell generates: it must carry the accent colour and no permanent underline.
-  interactions.markdownFileLinkRule = (() => {
-    const css = window.document.head.querySelector('style')?.textContent ?? ''
-    const rule = /\.sm-preview-body button[^{]*\{([^}]*)\}/.exec(css)?.[1] ?? ''
-    return {
-      accent: /color:\s*var\(--sm-accent\)/.test(rule),
-      border: /border-bottom/.test(rule),
-    }
-  })()
-  // Code *inside a markdown document* — inline spans and fenced blocks — is styled by the panel rather than
-  // left to the shell's prose rules, which barely separate it from the sentence around it.
-  interactions.markdownCodeRule = (() => {
-    const css = window.document.head.querySelector('style')?.textContent ?? ''
-    const code = /\[class\*="markdown"\]\s*code\s*\{([^}]*)\}/.exec(css)?.[1] ?? ''
-    const pre = /\[class\*="markdown"\]\s*pre\s*\{([^}]*)\}/.exec(css)?.[1] ?? ''
-    return { code, pre }
-  })()
-  // The file-type glyph the shell puts inside such a link is dropped — the label is what the reader scans.
+  // The panel leaves the shell's markdown alone: no typography rules, no link colours. What it must not lose is
+  // the shell's own file-link glyph, which an earlier build hid — the shell draws an icon there and the panel
+  // has to keep it. jsdom reports the display JS computed from the sheet, so the check is "not hidden".
   interactions.fileLinkGlyphDisplay = (() => {
     const glyph = host.querySelector('.sm-preview-dialog [class*="fileLink"] .host-file-glyph')
     return glyph === null ? null : window.getComputedStyle(glyph).display
+  })()
+  // And nothing of the panel's may style the shell's markdown: only the inline-glyph fix is allowed.
+  interactions.hostMarkdownOverrides = (() => {
+    const css = window.document.head.querySelector('style')?.textContent ?? ''
+    const rules = Array.from(css.matchAll(/\[data-skill-market\] \[class\*="markdown"\][^{]*\{[^}]*\}/g)).map((match) => match[0])
+    return rules.filter((rule) => rule.includes('svg') === false)
   })()
   // A file opened out of the tree is a new read, so it has no trail to walk back along yet.
   // The host's palette is tuned for prose; a file preview's code is the content, so the panel overrides the
@@ -1554,12 +1544,6 @@ if (argv.includes('--interactions')) {
     const css = window.document.head.querySelector('style')?.textContent ?? ''
     const block = /\[data-skill-market\]\s*\{([^}]*--shiki-token-keyword[^}]*)\}/.exec(css)?.[1] ?? ''
     return Array.from(block.matchAll(/--shiki-token-([a-z-]+):\s*([^;]+);/g)).map((match) => `${match[1]}=${match[2].trim()}`)
-  })()
-  // The colour is also written inline by an effect, because the cascade contest with the shell's own
-  // stylesheet is not one the panel can win by specificity alone.
-  interactions.fileLinkInlineColour = (() => {
-    const link = host.querySelector('.sm-preview-dialog [class*="fileLink"]')
-    return link === null ? null : (link.getAttribute('style') ?? '')
   })()
   interactions.backControlBeforeLink = host.querySelector('.sm-preview-head .sm-icon-btn') !== null
   // Following a link inside the dialog switches the file it shows, and keeps the dialog open: reading
