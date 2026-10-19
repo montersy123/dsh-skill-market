@@ -486,12 +486,20 @@ const moduleExports = registration.factory((specifier) => {
       // The real `MarkdownText` renders `<div class="markdown">`, and an external link carries an inline
       // glyph — so the stub does too, which is what lets the harness see that the glyph stays in the text
       // run instead of taking a line of its own.
-      MarkdownText: ({ text }) => React.createElement('div', { className: 'host-markdown-stub markdown' },
+      // The real `MarkdownText` renders a div carrying the shell's hashed markdown class (`_markdown_…`), and
+      // its file links are buttons carrying `_fileMention_…` / `_fileLink_…` with a `_linkIcon_…` glyph
+      // inside. The stub reproduces those class names so the panel's selectors are exercised as the shell
+      // emits them — a class the real component never produces would make these assertions meaningless.
+      MarkdownText: ({ text }) => React.createElement('div', { className: '_markdown_1ypvv_1 host-prose-stub' },
         React.createElement('p', null,
           text,
-          React.createElement('svg', { className: 'host-glyph' }),
-          // A file link as the host renders one inside a paragraph: a bare button.
-          React.createElement('button', { type: 'button', className: 'host-file-link' }, 'neighbour.md'))),
+          React.createElement('svg', { className: '_linkIcon_1ypvv_3 host-glyph' }),
+          React.createElement('button', {
+            type: 'button',
+            className: '_fileMention_1ypvv_2 _fileLink_1ypvv_2',
+          },
+            React.createElement('svg', { className: '_linkIcon_1ypvv_3 host-file-glyph' }),
+            'neighbour.md'))),
       // The real provider is what makes a link to another file clickable: the host renderer asks it for
       // `openFile`, and without one it draws such links as plain text. The probe button calls it the way a
       // link would, so the dialog's own handling (resolve, check the bundle, open) is exercised end to end.
@@ -1372,7 +1380,7 @@ if (argv.includes('--interactions')) {
     || host.querySelector('.sm-insp-body .sm-md') !== null
   // The summary is markdown, and tables appear there first: the host renderer is the only one in this
   // panel that can draw them, so the panel hands it the summary rather than a plain paragraph.
-  interactions.overviewUsesHostMarkdown = host.querySelector('.sm-insp-body .sm-prose .host-markdown-stub') !== null
+  interactions.overviewUsesHostMarkdown = host.querySelector('.sm-insp-body .sm-prose .host-prose-stub') !== null
   // No pointer at the 文件 tab either: the sections above speak for themselves, and a line
   // explaining where the skill's own document lives was removed on request.
   interactions.overviewHasFilesHint = /「文件」页签/.test(host.textContent ?? '')
@@ -1489,23 +1497,37 @@ if (argv.includes('--interactions')) {
   interactions.previewIsVerbatim = host.querySelector('.sm-preview-code') !== null
   // A markdown file goes through the host's renderer, which is what gives the dialog real markdown
   // instead of the plain text it used to show.
-  interactions.previewUsesHostMarkdown = host.querySelector('.sm-preview-dialog .host-markdown-stub') !== null
+  interactions.previewUsesHostMarkdown = host.querySelector('.sm-preview-dialog .host-prose-stub') !== null
   // A glyph inside host markdown belongs to a text run (a link's external icon). The panel's blanket
   // `svg { display: block }` would push it onto a line of its own, so it has to stay inline there.
   interactions.markdownGlyphDisplay = (() => {
-    const glyph = host.querySelector('.sm-preview-dialog .markdown svg')
+    const glyph = host.querySelector('.sm-preview-dialog .host-glyph')
     return glyph === null ? null : window.getComputedStyle(glyph).display
   })()
   // A document links to its neighbours, and the host renderer only makes those clickable when the delegate
   // provider carries an `openFile`. The dialog mounts it; the overview, which has no bundle at hand, does not.
   interactions.delegateProviderUsed = host.querySelector('.sm-preview-dialog .host-delegate-stub')?.getAttribute('data-open-file') ?? null
-  // The shell draws a file link as a bare button, so inside a text container it has to be coloured like a
-  // link or it reads as plain words next to the accent-coloured external links.
+  // The shell draws a file link as a bare button carrying `_fileLink_…`, which reads as plain words next to
+  // the accent-coloured external links. The rule matches that class, not the container: a container-based
+  // selector looked right but never matched what the shell emits, which is why the colour came and went.
   interactions.markdownFileLinkUnderline = (() => {
-    const link = host.querySelector('.sm-preview-dialog .markdown p button')
+    const link = host.querySelector('.sm-preview-dialog [class*="fileLink"]')
     return link === null ? null : window.getComputedStyle(link).borderBottomStyle
   })()
+  // The file-type glyph the shell puts inside such a link is dropped — the label is what the reader scans.
+  interactions.fileLinkGlyphDisplay = (() => {
+    const glyph = host.querySelector('.sm-preview-dialog [class*="fileLink"] .host-file-glyph')
+    return glyph === null ? null : window.getComputedStyle(glyph).display
+  })()
   // A file opened out of the tree is a new read, so it has no trail to walk back along yet.
+  // The host's palette is tuned for prose; a file preview's code is the content, so the panel overrides the
+  // token colours for its own subtree. jsdom does not resolve custom properties, so the declaration is read
+  // from the stylesheet — what matters is that the panel still declares a palette of its own.
+  interactions.codePaletteDeclared = (() => {
+    const css = window.document.head.querySelector('style')?.textContent ?? ''
+    const block = /\[data-skill-market\]\s*\{([^}]*--shiki-token-keyword[^}]*)\}/.exec(css)?.[1] ?? ''
+    return Array.from(block.matchAll(/--shiki-token-([a-z-]+):\s*([^;]+);/g)).map((match) => `${match[1]}=${match[2].trim()}`)
+  })()
   interactions.backControlBeforeLink = host.querySelector('.sm-preview-head .sm-icon-btn') !== null
   // Following a link inside the dialog switches the file it shows, and keeps the dialog open: reading
   // around a bundle should not cost a reopen per file.

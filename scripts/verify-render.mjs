@@ -145,6 +145,17 @@ const assertions = [
     && report.interactions?.pathAfterBack === 'references/guide.md'
     && report.interactions?.backControlGone === true],
   ['a file link inside markdown is styled as a link', () => report.interactions?.markdownFileLinkUnderline === 'dotted'],
+  // The shell puts a file-type glyph inside a file link; the panel drops it, since the label is the content.
+  ['a file link does not carry its type glyph', () => report.interactions?.fileLinkGlyphDisplay === 'none'],
+  // The panel overrides the host's code palette for its own subtree: in a preview the code is the content,
+  // and the host's tokens (tuned for prose) washed out. Six declarations is the palette; the string colour is
+  // checked not to be the host's (#2f9e44) so this cannot pass on the inherited palette.
+  ['the panel declares its own code palette', () => {
+    const declared = report.interactions?.codePaletteDeclared ?? []
+    return declared.length >= 6
+      && declared.includes('string=#2f9e44') === false
+      && declared.includes('keyword=#d6336c') === false
+  }],
   ['the fallback renderer follows a link to a neighbouring file', () => report.interactions?.fallbackLinkIsButton === true
     && report.interactions?.fallbackLinkOpened === 'references/expert-topics.md'
     && report.interactions?.fallbackLinkAnchor === 'https://example.com'],

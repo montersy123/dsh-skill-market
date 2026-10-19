@@ -192,8 +192,15 @@ handle 与 slug，所以详情按钮走同一个抽屉。
   `CODE_LANGUAGES`）；推断不出就按纯文本渲染，不猜语法
 - 宿主的这两个组件外面包了一层 error boundary：宿主组件抛错时退回本面板的渲染，不会把整个面板带崩
 - 面板里那条 `svg { display: block }` 只对**自家图标**成立；宿主 markdown 会把图标放在一段文字**里面**
-  （外链的地球），所以 `.markdown svg` / `.sm-prose svg` / `.sm-md svg` / `.sm-preview-body svg`
+  （外链的地球），所以 `[class*="markdown"] svg` / `.sm-prose svg` / `.sm-md svg` / `.sm-preview-body svg`
   单独设回 `inline-block` —— 否则图标独占一行，链接被挤到下一行
+- **选择器必须按宿主真实类名写**：宿主的类名是 CSS Modules 产出的 `_markdown_1ypvv_…`、`_fileLink_…`，
+  不是 `.markdown` / `.fileLink`。早期用 `.markdown …` 的选择器一条都没匹配上，所以链接高亮“时有时无”；
+  现在用 `[class*="fileLink"]` / `[class*="fileMention"]` / `[class*="markdown"]`（类名里的固定部分）
+- 宿主的文件链接是**裸 `button`**，和强调色外链并排时像普通文字，所以按 `[class*="fileLink"]` 上强调色 +
+  虚线下划线；它**内嵌的文件类型图标**（`svg[class*="linkIcon"]`）直接隐藏 —— 标签才是阅读对象
+- 代码配色是**面板自己的一套 `--shiki-*`**（同一组色相，浅色更深、深色更亮），代码块另有面板背景与边框：
+  宿主的调色板是为「句子之间的代码片段」调的，在文件预览里 12px 的代码会糊成一片灰
 - 其他一律**原样显示** —— 预览不解析、不执行文件内容
 - 内容按 `<技能 id>|<版本>:<路径>` 缓存,来回切不重复请求（键里必须带技能：`SKILL.md` + 最新版本是
   所有技能共用的键，漏了技能就会显示成别人的文件）
