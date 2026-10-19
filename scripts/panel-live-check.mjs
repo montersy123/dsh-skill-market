@@ -333,6 +333,32 @@ expect(third.banner === false, 'an advice recorded before this Host started is n
 expect(JSON.parse(readFileSync(stateFile, 'utf8')).pending.dirs.length === 0,
   'and the stale payload is cleared from the file')
 
+// A failed read must never look like "nothing stored": that reading let a momentary failure replace the stored
+// document — favorites included — with the defaults the page started from. A corrupt file has to answer 5xx, and
+// the previous document has to survive next to it.
+console.log('\n7) a state file that cannot be read is reported, not treated as empty')
+const intact = readFileSync(stateFile, 'utf8')
+writeFileSync(stateFile, '{ not json')
+const broken = await fetch(`${origin}/skill-market/api/state`)
+console.log('  corrupt read    : HTTP', broken.status)
+expect(broken.status >= 500, 'a corrupt state file answers 5xx instead of 200 with an empty document')
+const brokenBody = await broken.json().catch(() => ({}))
+expect(typeof brokenBody.state === 'undefined', 'and the answer carries no document to adopt')
+writeFileSync(stateFile, intact)
+const recovered = await (await fetch(`${origin}/skill-market/api/state`)).json()
+expect(Array.isArray(recovered?.state?.saved) && recovered.state.saved.length > 0,
+  'the intact document is served again once it is readable')
+
+console.log('\n8) the document being replaced is kept as a backup')
+const withBackup = await mount(async (window, act, host) => ({
+  cards: host.querySelectorAll('.sm-skill-card').length,
+}))
+console.log('  cards after the detour:', withBackup.cards)
+expect(withBackup.cards > 0, 'the panel still renders after the corrupt-read detour')
+expect(existsSync(`${stateFile}.bak`), 'a write keeps the previous document as .bak')
+const backup = JSON.parse(readFileSync(`${stateFile}.bak`, 'utf8'))
+expect(Array.isArray(backup.saved), 'and the backup is a complete document')
+
 await new Promise((resolve) => {
   server.close(resolve)
   server.closeAllConnections?.()
