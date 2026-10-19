@@ -107,9 +107,28 @@ const assertions = [
   // The host ships a markdown renderer and a shiki-backed code block; the dialog hands both to it, so a
   // preview has real markdown and real syntax colours instead of the plain text it used to show.
   ['markdown files render through the host markdown renderer', () => report.interactions?.previewUsesHostMarkdown === true],
-  // The summary is markdown too, and tables appear there first — the panel's own renderer cannot draw
-  // them, so this is what keeps a skill's description readable rather than literal pipes.
+  // The summary is markdown too, and tables appear there first — the host renderer is what keeps a
+  // skill's description readable rather than literal pipes.
   ['the overview summary renders markdown through the host renderer', () => report.interactions?.overviewUsesHostMarkdown === true],
+  // ...and the panel's own renderer must draw tables too, because it is the fallback when the host's is not
+  // in the build. These are the exact lines from a skill document whose table rendered as literal pipes.
+  ['the fallback renderer recognises a GFM table', () => {
+    const rules = report.interactions?.tableRules ?? {}
+    return rules.header?.cells?.length === 2
+      && rules.header?.delimiter === false
+      && rules.delimiter?.delimiter === true
+      && (rules.delimiter?.align ?? []).length === 2
+      && rules.body?.cells?.length === 2
+      && rules.thematicBreak?.delimiter === false
+  }],
+  ['the rendered table has header, body, alignment and a one-column case', () => {
+    const interactions = report.interactions ?? {}
+    return JSON.stringify(interactions.tableHeads) === JSON.stringify(['目标', '资料', '单列'])
+      && (interactions.tableCells ?? []).join('|') === '甲|乙|唯一'
+      && interactions.tableWrapped === true
+      && (interactions.tableAligns ?? [])[1] === 'center'
+      && interactions.tableParagraphKept === '导语一段。'
+  }],
   ['code files render through the host code block, with their language', () => report.interactions?.codeFileFound === true
     && report.interactions?.codeBlockLang === 'python'
     && report.interactions?.codePreviewClosed === true],

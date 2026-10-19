@@ -1391,6 +1391,39 @@ if (argv.includes('--interactions')) {
   interactions.collapseDir = await click('.sm-tree-dir')
   interactions.fileTreeFilesAfterCollapse = host.querySelectorAll('.sm-tree-file').length
 
+  // The panel's own renderer is the fallback, so the harness draws its table output directly — the
+  // stubbed host renderer would otherwise hide it. These are the exact lines from a skill document whose
+  // table was rendering as a wall of pipes.
+  interactions.tableRules = {
+    header: moduleExports.markdownTableForTest('| 当前目标 | 首选资料 |'),
+    delimiter: moduleExports.markdownTableForTest('| --- | --- |'),
+    body: moduleExports.markdownTableForTest('| 软件/网站项目 | [专题](references/expert-topics.md) |'),
+    thematicBreak: moduleExports.markdownTableForTest('---'),
+  }
+  const tableScratch = window.document.createElement('div')
+  window.document.body.appendChild(tableScratch)
+  const tableRoot = createRoot(tableScratch)
+  await act(async () => {
+    tableRoot.render(moduleExports.MarkdownForTest([
+      '导语一段。',
+      '',
+      '| 目标 | 资料 |',
+      '| --- | :---: |',
+      '| 甲 | 乙 |',
+      '',
+      '| 单列 |',
+      '| --- |',
+      '| 唯一 |',
+    ].join('\n')))
+  })
+  const tableHeads = Array.from(tableScratch.querySelectorAll('table.sm-table th'))
+  interactions.tableHeads = tableHeads.map((cell) => cell.textContent)
+  interactions.tableAligns = tableHeads.map((cell) => cell.style.textAlign)
+  interactions.tableCells = Array.from(tableScratch.querySelectorAll('table.sm-table td')).map((cell) => cell.textContent)
+  interactions.tableWrapped = tableScratch.querySelector('.sm-table-wrap') !== null
+  interactions.tableParagraphKept = tableScratch.querySelector('p')?.textContent ?? null
+  await act(async () => { tableRoot.unmount() })
+  tableScratch.remove()
   // Clicking a file reads it in a dialog over the panel — the drawer is 560px wide, and this is the one
   // action in it that wants more room. The tree stays where it was, behind the dialog.
   interactions.treeIsButtons = host.querySelectorAll('button.sm-tree-file').length
