@@ -156,11 +156,14 @@ const assertions = [
   // ...and the colour is written inline as well as by rule: the cascade contest with the shell's own
   // stylesheet is not one the panel wins by specificity, since the shell ships a colour for the same class.
   ['a file link is coloured inline as well as by rule', () => /color:\s*var\(--sm-accent\)/.test(report.interactions?.fileLinkInlineColour ?? '')],
-  // Markdown code inside a document is left to the shell's own markdown styles: the panel used to paint it,
-  // and the preview ended up looking like a different product from DSH's own file view.
-  ['markdown code is left to the shell\'s own styling', () => {
+  // The shell renders markdown's elements but its stylesheet does not reach the dialog, so the panel typesets
+  // them itself — which is why a preview used to look unstyled next to the same file opened in DSH.
+  ['the panel typesets host markdown itself', () => {
     const rule = report.interactions?.markdownCodeRule ?? {}
-    return (rule.code ?? '') === '' && (rule.pre ?? '') === ''
+    return /font-family:\s*var\(--sm-font-mono\)/.test(rule.code ?? '')
+      && /background:\s*var\(--sm-bg\)/.test(rule.code ?? '')
+      && /border:/.test(rule.code ?? '')
+      && /background:\s*var\(--sm-bg\)/.test(rule.pre ?? '')
   }],
   // The panel overrides the host's code palette for its own subtree: in a preview the code is the content,
   // and the host's tokens (tuned for prose) washed out. Six declarations is the palette; the string colour is
