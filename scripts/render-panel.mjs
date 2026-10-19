@@ -487,7 +487,11 @@ const moduleExports = registration.factory((specifier) => {
       // glyph — so the stub does too, which is what lets the harness see that the glyph stays in the text
       // run instead of taking a line of its own.
       MarkdownText: ({ text }) => React.createElement('div', { className: 'host-markdown-stub markdown' },
-        React.createElement('p', null, text, React.createElement('svg', { className: 'host-glyph' }))),
+        React.createElement('p', null,
+          text,
+          React.createElement('svg', { className: 'host-glyph' }),
+          // A file link as the host renders one inside a paragraph: a bare button.
+          React.createElement('button', { type: 'button', className: 'host-file-link' }, 'neighbour.md'))),
       // The real provider is what makes a link to another file clickable: the host renderer asks it for
       // `openFile`, and without one it draws such links as plain text. The probe button calls it the way a
       // link would, so the dialog's own handling (resolve, check the bundle, open) is exercised end to end.
@@ -1495,6 +1499,14 @@ if (argv.includes('--interactions')) {
   // A document links to its neighbours, and the host renderer only makes those clickable when the delegate
   // provider carries an `openFile`. The dialog mounts it; the overview, which has no bundle at hand, does not.
   interactions.delegateProviderUsed = host.querySelector('.sm-preview-dialog .host-delegate-stub')?.getAttribute('data-open-file') ?? null
+  // The shell draws a file link as a bare button, so inside a text container it has to be coloured like a
+  // link or it reads as plain words next to the accent-coloured external links.
+  interactions.markdownFileLinkUnderline = (() => {
+    const link = host.querySelector('.sm-preview-dialog .markdown p button')
+    return link === null ? null : window.getComputedStyle(link).borderBottomStyle
+  })()
+  // A file opened out of the tree is a new read, so it has no trail to walk back along yet.
+  interactions.backControlBeforeLink = host.querySelector('.sm-preview-head .sm-icon-btn') !== null
   // Following a link inside the dialog switches the file it shows, and keeps the dialog open: reading
   // around a bundle should not cost a reopen per file.
   // The probe passes a link relative to the open file (`references/guide.md` + `deep/notes.md`), which is
@@ -1506,6 +1518,16 @@ if (argv.includes('--interactions')) {
   })
   interactions.pathAfterFollowedLink = host.querySelector('.sm-preview-path')?.textContent ?? null
   interactions.dialogOpenAfterFollowedLink = host.querySelector('.sm-preview-layer') !== null
+  // ...and the step can be walked back, which is the whole point of keeping a trail.
+  interactions.backControlShown = host.querySelector('.sm-preview-head .sm-icon-btn') !== null
+  // A name missing from the icon table silently falls back to the file glyph, so the path is asserted too.
+  interactions.backControlGlyph = host.querySelector('.sm-preview-head .sm-icon-btn path')?.getAttribute('d') ?? null
+  await act(async () => {
+    host.querySelector('.sm-preview-head .sm-icon-btn')?.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }))
+    await settle()
+  })
+  interactions.pathAfterBack = host.querySelector('.sm-preview-path')?.textContent ?? null
+  interactions.backControlGone = host.querySelector('.sm-preview-head .sm-icon-btn') === null
   interactions.previewTreeVisibleBehind = host.querySelectorAll('.sm-tree-row').length > 0
   // jsdom has no layout engine — every `getBoundingClientRect` is zero — so "bigger than the drawer" is
   // read from the stylesheet's own declarations, and "not inside the drawer" from the tree.

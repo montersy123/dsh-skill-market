@@ -139,6 +139,12 @@ const assertions = [
   ['following a link inside the dialog opens that file and keeps it open', () => report.interactions?.dialogProbeFound === true
     && report.interactions?.pathAfterFollowedLink === 'references/deep/notes.md'
     && report.interactions?.dialogOpenAfterFollowedLink === true],
+  ['a followed link can be walked back to the file it came from', () => report.interactions?.backControlBeforeLink === false
+    && report.interactions?.backControlShown === true
+    && report.interactions?.backControlGlyph === 'M14.5 6l-6 6 6 6'
+    && report.interactions?.pathAfterBack === 'references/guide.md'
+    && report.interactions?.backControlGone === true],
+  ['a file link inside markdown is styled as a link', () => report.interactions?.markdownFileLinkUnderline === 'dotted'],
   ['the fallback renderer follows a link to a neighbouring file', () => report.interactions?.fallbackLinkIsButton === true
     && report.interactions?.fallbackLinkOpened === 'references/expert-topics.md'
     && report.interactions?.fallbackLinkAnchor === 'https://example.com'],
