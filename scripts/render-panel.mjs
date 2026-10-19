@@ -483,7 +483,11 @@ const moduleExports = registration.factory((specifier) => {
   // and names the language the extension implies.
   if (specifier === '@deepseek-ai/dsh-client-ui-primitives') {
     return {
-      MarkdownText: ({ text }) => React.createElement('div', { className: 'host-markdown-stub' }, text),
+      // The real `MarkdownText` renders `<div class="markdown">`, and an external link carries an inline
+      // glyph — so the stub does too, which is what lets the harness see that the glyph stays in the text
+      // run instead of taking a line of its own.
+      MarkdownText: ({ text }) => React.createElement('div', { className: 'host-markdown-stub markdown' },
+        React.createElement('p', null, text, React.createElement('svg', { className: 'host-glyph' }))),
       CodeBlock: ({ code, lang }) => React.createElement('pre', {
         className: 'host-code-stub',
         'data-lang': lang ?? '',
@@ -1437,6 +1441,12 @@ if (argv.includes('--interactions')) {
   // A markdown file goes through the host's renderer, which is what gives the dialog real markdown
   // instead of the plain text it used to show.
   interactions.previewUsesHostMarkdown = host.querySelector('.sm-preview-dialog .host-markdown-stub') !== null
+  // A glyph inside host markdown belongs to a text run (a link's external icon). The panel's blanket
+  // `svg { display: block }` would push it onto a line of its own, so it has to stay inline there.
+  interactions.markdownGlyphDisplay = (() => {
+    const glyph = host.querySelector('.sm-preview-dialog .markdown svg')
+    return glyph === null ? null : window.getComputedStyle(glyph).display
+  })()
   interactions.previewTreeVisibleBehind = host.querySelectorAll('.sm-tree-row').length > 0
   // jsdom has no layout engine — every `getBoundingClientRect` is zero — so "bigger than the drawer" is
   // read from the stylesheet's own declarations, and "not inside the drawer" from the tree.

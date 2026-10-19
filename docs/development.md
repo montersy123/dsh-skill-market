@@ -191,6 +191,9 @@ handle 与 slug，所以详情按钮走同一个抽屉。
   `@deepseek-ai/dsh-client-ui-theme`），语言由扩展名推断（`py`→python、`sh`→bash……见
   `CODE_LANGUAGES`）；推断不出就按纯文本渲染，不猜语法
 - 宿主的这两个组件外面包了一层 error boundary：宿主组件抛错时退回本面板的渲染，不会把整个面板带崩
+- 面板里那条 `svg { display: block }` 只对**自家图标**成立；宿主 markdown 会把图标放在一段文字**里面**
+  （外链的地球），所以 `.markdown svg` / `.sm-prose svg` / `.sm-md svg` / `.sm-preview-body svg`
+  单独设回 `inline-block` —— 否则图标独占一行，链接被挤到下一行
 - 其他一律**原样显示** —— 预览不解析、不执行文件内容
 - 内容按 `<技能 id>|<版本>:<路径>` 缓存,来回切不重复请求（键里必须带技能：`SKILL.md` + 最新版本是
   所有技能共用的键，漏了技能就会显示成别人的文件）

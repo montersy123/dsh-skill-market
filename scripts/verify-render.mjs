@@ -107,6 +107,9 @@ const assertions = [
   // The host ships a markdown renderer and a shiki-backed code block; the dialog hands both to it, so a
   // preview has real markdown and real syntax colours instead of the plain text it used to show.
   ['markdown files render through the host markdown renderer', () => report.interactions?.previewUsesHostMarkdown === true],
+  // A link's external glyph sits inside its text run. The panel sets `svg { display: block }` for its own
+  // icons, which stranded that glyph on a line of its own above the link, so this is asserted explicitly.
+  ['a glyph inside host markdown stays inline', () => report.interactions?.markdownGlyphDisplay === 'inline-block'],
   // The summary is markdown too, and tables appear there first — the host renderer is what keeps a
   // skill's description readable rather than literal pipes.
   ['the overview summary renders markdown through the host renderer', () => report.interactions?.overviewUsesHostMarkdown === true],
