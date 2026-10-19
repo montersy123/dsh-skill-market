@@ -186,10 +186,15 @@ handle 与 slug，所以详情按钮走同一个抽屉。
 - **兜底渲染器自己也画表格**：`| 表头 |` + `| --- |` 分隔行 + 数据行 → `.sm-table`（外层 `.sm-table-wrap`
   横向滚动，支持 `:---:` 对齐、单列表格）。技能文档里的表格很常见，兜底渲染器若不认表格，就会退化成
   把整张表拼成一段竖线文本 —— 这正是它补上表格规则的原因；行内链接 `[文字](url)` 也一并处理：
-  http(s) 渲染成新窗口打开的 `<a>`，指向包内其他文件的相对链接渲染成带下划线的标签（不假装可点）
-- 其他文件交给宿主的 **`CodeBlock`**：shiki 高亮，配色是主题里的 `--shiki-*`（浅/深两套，定义在
-  `@deepseek-ai/dsh-client-ui-theme`），语言由扩展名推断（`py`→python、`sh`→bash……见
-  `CODE_LANGUAGES`）；推断不出就按纯文本渲染，不猜语法
+  http(s) 渲染成新窗口打开的 `<a>`，指向包内其他文件的相对链接在「能跟着走」时渲染成强调色按钮、
+  不能时渲染成普通文字（`title` 仍标出目标路径）
+- 其他文件交给宿主的 **`useCodeHighlighter(lang)`**（**不是** `CodeBlock`）：shiki 高亮，语言由扩展名推断
+  （`py`→python、`sh`→bash……见 `CODE_LANGUAGES`），推断不出就按纯文本渲染，不猜语法
+  - **为什么不用 `CodeBlock`**：它把「请求语法包」挂在自己的 IntersectionObserver 上（`g8`），弹框里那个块
+    常常没被判定为可见 → 语法包从不加载 → **首屏不亮**，跳转一次后别的渲染顺带触发才亮起来。
+    `useCodeHighlighter` 直接走 `l8`（内部 `Hc` 确保加载并订阅完成事件），语法到达后自己重渲染
+  - 同理 `HostFallback` 的失败状态随 `resetKey`（文件路径）清除：宿主在语法/样式未就绪时抛一次错，
+    不能让那个边界永久停在兜底上，否则后面每个文件都走兜底
 - 宿主的这两个组件外面包了一层 error boundary：宿主组件抛错时退回本面板的渲染，不会把整个面板带崩
 - 面板里那条 `svg { display: block }` 只对**自家图标**成立；宿主 markdown 会把图标放在一段文字**里面**
   （外链的地球），所以 `[class*="markdown"] svg` / `.sm-prose svg` / `.sm-md svg` / `.sm-preview-body svg`
@@ -197,6 +202,9 @@ handle 与 slug，所以详情按钮走同一个抽屉。
 - **选择器必须按宿主真实类名写**：宿主的类名是 CSS Modules 产出的 `_markdown_1ypvv_…`、`_fileLink_…`，
   不是 `.markdown` / `.fileLink`。早期用 `.markdown …` 的选择器一条都没匹配上，所以链接高亮“时有时无”；
   现在用 `[class*="fileLink"]` / `[class*="fileMention"]` / `[class*="markdown"]`（类名里的固定部分）
+- 光靠样式表仍不够：宿主对同一个类也声明了颜色，注入顺序决定同权重谁赢，所以弹框在**每次渲染后**用
+  `style.setProperty('color', 'var(--sm-accent)', 'important')` 把链接颜色写成**行内**（`FileDialog` 的
+  effect）—— 行内声明在这场级联里必胜，也是「链接颜色一直不变」最终被解决的方式
 - 宿主的文件链接是**裸 `button`**，和强调色外链并排时像普通文字，所以按 `[class*="fileLink"]` 上**强调色**
   （**不常驻下划线**：表格里每个引用都带下划线比单元格内容还重，颜色已经表示「可以点」；下划线只在 `:hover`
   出现，同普通网页链接）；它**内嵌的文件类型图标**（`svg[class*="linkIcon"]`）直接隐藏 —— 标签才是阅读对象

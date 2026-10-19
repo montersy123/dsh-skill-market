@@ -153,6 +153,9 @@ const assertions = [
   }],
   // The shell puts a file-type glyph inside a file link; the panel drops it, since the label is the content.
   ['a file link does not carry its type glyph', () => report.interactions?.fileLinkGlyphDisplay === 'none'],
+  // ...and the colour is written inline as well as by rule: the cascade contest with the shell's own
+  // stylesheet is not one the panel wins by specificity, since the shell ships a colour for the same class.
+  ['a file link is coloured inline as well as by rule', () => /color:\s*var\(--sm-accent\)/.test(report.interactions?.fileLinkInlineColour ?? '')],
   // Code inside a markdown document is styled by the panel: an inline span gets its own surface, a border and
   // a text colour of its own, and a fenced block gets the panel's surface — the shell's prose rules leave both
   // a shade away from the page, which is what "the code does not stand out" meant.
@@ -185,8 +188,9 @@ const assertions = [
       && resolved.url === null
       && resolved.escape === null
   }],
-  ['code files render through the host code block, with their language', () => report.interactions?.codeFileFound === true
-    && report.interactions?.codeBlockLang === 'python'
+  ['code files are coloured through the host highlighter', () => report.interactions?.codeFileFound === true
+    && (report.interactions?.codeTokenCount ?? 0) > 0
+    && (report.interactions?.codeText ?? '').includes('run.py') === false
     && report.interactions?.codePreviewClosed === true],
   // A file preview belongs to one file *of one skill*. Keyed by `<version>:<path>` alone, the second
   // skill's 文件 tab was a cache hit on the first skill's `SKILL.md` and rendered its text — the stub

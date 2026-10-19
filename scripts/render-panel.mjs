@@ -519,6 +519,14 @@ const moduleExports = registration.factory((specifier) => {
         className: 'host-code-stub',
         'data-lang': lang ?? '',
       }, React.createElement('code', null, code)),
+      // The panel colours code through this hook rather than through `CodeBlock`: the component gates its
+      // highlighting on an IntersectionObserver, and inside a dialog that block never registers as visible,
+      // so no grammar is ever requested and the first file opened stays plain. The hook re-renders by itself
+      // once the grammar arrives, so the stub returns tokens as soon as a language is known.
+      useCodeHighlighter: (lang) => (code) => (lang === undefined ? undefined : code.split('\n').map((line) => [{
+        text: line,
+        style: { color: 'var(--shiki-token-keyword)' },
+      }])),
     }
   }
   throw new Error(`unsupported external: ${specifier}`)
@@ -1547,6 +1555,12 @@ if (argv.includes('--interactions')) {
     const block = /\[data-skill-market\]\s*\{([^}]*--shiki-token-keyword[^}]*)\}/.exec(css)?.[1] ?? ''
     return Array.from(block.matchAll(/--shiki-token-([a-z-]+):\s*([^;]+);/g)).map((match) => `${match[1]}=${match[2].trim()}`)
   })()
+  // The colour is also written inline by an effect, because the cascade contest with the shell's own
+  // stylesheet is not one the panel can win by specificity alone.
+  interactions.fileLinkInlineColour = (() => {
+    const link = host.querySelector('.sm-preview-dialog [class*="fileLink"]')
+    return link === null ? null : (link.getAttribute('style') ?? '')
+  })()
   interactions.backControlBeforeLink = host.querySelector('.sm-preview-head .sm-icon-btn') !== null
   // Following a link inside the dialog switches the file it shows, and keeps the dialog open: reading
   // around a bundle should not cost a reopen per file.
@@ -1624,7 +1638,11 @@ if (argv.includes('--interactions')) {
       await settle()
     })
   }
-  interactions.codeBlockLang = host.querySelector('.sm-preview-dialog .host-code-stub')?.getAttribute('data-lang') ?? null
+  // A code file is coloured through the host's highlighter hook, so the tokens are in the panel's own <pre>
+  // rather than inside a host `CodeBlock` — that component would not highlight until an observer saw it.
+  const codeBody = host.querySelector('.sm-preview-dialog .sm-preview-code code')
+  interactions.codeTokenCount = codeBody === null ? 0 : codeBody.querySelectorAll('span').length
+  interactions.codeText = codeBody?.textContent ?? null
   await act(async () => {
     host.querySelector('.sm-preview-head .sm-btn')?.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }))
     await settle()
