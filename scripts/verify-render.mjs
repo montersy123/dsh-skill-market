@@ -144,7 +144,13 @@ const assertions = [
     && report.interactions?.backControlGlyph === 'M14.5 6l-6 6 6 6'
     && report.interactions?.pathAfterBack === 'references/guide.md'
     && report.interactions?.backControlGone === true],
-  ['a file link inside markdown is styled as a link', () => report.interactions?.markdownFileLinkUnderline === 'dotted'],
+  // A file link is highlighted, not underlined: the accent colour alone says it goes somewhere, and a
+  // permanent underline under every reference in a table is heavier than the cell's content.
+  ['a file link is highlighted without an underline', () => {
+    const decoration = report.interactions?.markdownFileLinkDecoration
+    const rule = report.interactions?.markdownFileLinkRule ?? {}
+    return (decoration === 'none' || decoration === '') && rule.accent === true && rule.border === false
+  }],
   // The shell puts a file-type glyph inside a file link; the panel drops it, since the label is the content.
   ['a file link does not carry its type glyph', () => report.interactions?.fileLinkGlyphDisplay === 'none'],
   // The panel overrides the host's code palette for its own subtree: in a preview the code is the content,

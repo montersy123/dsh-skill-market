@@ -1510,9 +1510,20 @@ if (argv.includes('--interactions')) {
   // The shell draws a file link as a bare button carrying `_fileLink_…`, which reads as plain words next to
   // the accent-coloured external links. The rule matches that class, not the container: a container-based
   // selector looked right but never matched what the shell emits, which is why the colour came and went.
-  interactions.markdownFileLinkUnderline = (() => {
+  // It is colour-only — the underline is a hover affordance, not a permanent decoration.
+  interactions.markdownFileLinkDecoration = (() => {
     const link = host.querySelector('.sm-preview-dialog [class*="fileLink"]')
     return link === null ? null : window.getComputedStyle(link).borderBottomStyle
+  })()
+  // jsdom does not expand `border-bottom: 0` into a longhand, so the rule itself is read as well: it must
+  // carry the accent colour and no border, which is "highlighted, not underlined".
+  interactions.markdownFileLinkRule = (() => {
+    const css = window.document.head.querySelector('style')?.textContent ?? ''
+    const rule = /\[class\*="fileLink"\][^{]*\{([^}]*)\}/.exec(css)?.[1] ?? ''
+    return {
+      accent: /color:\s*var\(--sm-accent\)/.test(rule),
+      border: /border-bottom/.test(rule),
+    }
   })()
   // The file-type glyph the shell puts inside such a link is dropped — the label is what the reader scans.
   interactions.fileLinkGlyphDisplay = (() => {
