@@ -6,14 +6,16 @@
 
 ## 1. 一句话现状
 
-- 仓库：`D:\DshProjects\dsh-skill-market`，分支 `main`，最新提交 `f3914f7`（`fix: never treat an unreadable state
-  file as an empty one`，已推但**未发布**）。
-- 已发布：`@montersy123/dsh-skill-market@2.0.5`（npm `latest`，provenance 已上传），tag `v2.0.5`，
-  GitHub Release 同 tag。CI：[publish #39212483636](https://github.com/montersy123/dsh-skill-market/actions/runs/39212483636)。
+- 仓库：`D:\DshProjects\dsh-skill-market`，分支 `main`，最新提交 `release: v2.0.6`。
+- 已发布：`@montersy123/dsh-skill-market@2.0.6`（npm `latest`，provenance 已上传，17 files，
+  shasum `d1816e0a…`），tag `v2.0.6`，[Release](https://github.com/montersy123/dsh-skill-market/releases/tag/v2.0.6)；
+  上一版 `2.0.5` 的 CI 是 [publish #39212483636](https://github.com/montersy123/dsh-skill-market/actions/runs/39212483636)。
 - 全部检查通过：`npm test` **34/34**；渲染断言 `scripts/verify-render.mjs` **57 条**。
 - **唯一未解决的产品问题**：表格单元格里「链接 + 纯文本」混合时，链接在面板里不显示为链接（详见第 6 节）。
-- **已修的严重问题（待发版）**：读不到 `panel.json` 时会被当成“空文档”，下一次写入会覆盖掉收藏
-  （见第 10 节「数据丢失事故」）。这个修复现在只在本机 profile 里，**2.0.6 尚未发布**。
+- **2.0.6 修掉了数据丢失**：读不到 `panel.json` 不再被当成“空文档”（见第 10 节）。本机 profile 里的 `lib/`
+  已是最新代码（`INSTALLED COPY OK`），但 profile 的 `package.json` 仍写 `2.0.5`；下次
+  `dsh plugin add @montersy123/dsh-skill-market@2.0.6` 会一并对齐（需要时先把 `2.0.6` 加进
+  `pnpm-workspace.yaml` 的 `minimumReleaseAgeExclude`，因为发布不足 24 小时）。
 
 ## 10. 数据丢失事故（2026-10-19，务必读）
 
