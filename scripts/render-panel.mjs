@@ -117,6 +117,12 @@ window.fetch = async (url, init = {}) => {
   if (typeof init.body === 'string') {
     try { parsedBody = JSON.parse(init.body) } catch { parsedBody = init.body }
   }
+  // The panel's own diagnostic report: it exists to be written down, never to answer, so the stub accepts it and
+  // keeps it out of the request log the assertions reason about.
+  if (target.includes('/client-report')) {
+    return { ok: true, status: 200, async json() { return { ok: true } } }
+  }
+
   requests.push({ target, method, body: parsedBody })
 
   // The panel's own state, before anything else: its path shares no prefix with the market
