@@ -161,8 +161,8 @@ const assertions = [
   ['the panel typesets host markdown itself', () => {
     const rule = report.interactions?.markdownCodeRule ?? {}
     return /font-family:\s*var\(--sm-font-mono\)/.test(rule.code ?? '')
-      // The chip is tinted from the accent rather than a plain grey surface.
-      && /background:\s*color-mix\(in oklch, var\(--sm-accent\)/.test(rule.code ?? '')
+      // A neutral chip: the panel adds no accent tint of its own here.
+      && /background:\s*var\(--sm-bg\)/.test(rule.code ?? '')
       && /border:/.test(rule.code ?? '')
       && /background:\s*var\(--sm-bg\)/.test(rule.pre ?? '')
   }],
