@@ -15,7 +15,6 @@
   拒绝采纳“什么都没存过”的回答，用于覆盖“客户端已新、Host 仍旧”的短暂不一致。它会随下一个版本发出；
   `main` 与 npm 的 `latest` 因此相差一个提交，属已知状态，不必“修正”。
 - 全部检查通过：`npm test` **34/34**；渲染断言 `scripts/verify-render.mjs` **57 条**。
-- **唯一未解决的产品问题**：表格单元格里「链接 + 纯文本」混合时，链接在面板里不显示为链接（详见第 6 节）。
 - **2.0.6 修掉了数据丢失**：读不到 `panel.json` 不再被当成“空文档”（见第 10 节）。本机 profile 里的 `lib/`
   已是最新代码（`INSTALLED COPY OK`，含未发布的 `5847ffe`），但 profile 的 `package.json` 仍写 `2.0.5`；
   下次 `dsh plugin add @montersy123/dsh-skill-market@2.0.6` 会一并对齐（需要时先把 `2.0.6` 加进
@@ -106,59 +105,7 @@
 9. **CSS 模板字符串里不能出现反引号**（`lib/client.js` 的样式是一段模板字符串），注释里写
    `` `<button>` `` 会直接把字符串截断。多次踩到。
 
-## 6. 未解决的问题：表格单元格里「链接 + 纯文本」不渲染
-
-**现象**（用户最后确认）：只有 `SKILL.md` 的首选资料表格里那种「链接文字前面或后面还有纯文字」的单元格
-不显示链接；其它文件里的链接正常。
-
-**已确认的事实**（别再重复验证这些）：
-
-- `/build` 报告 `hostBuild: b21`，client 的 `sha256` 与磁盘一致 → 页面跑的是新代码；
-- 面板挂载时上报过 `hasMarkdown: true, hasDelegateProvider: true, hasHighlighter: true`，
-  `rendererExports` 含 `MarkdownDelegateProvider` / `MarkdownText` / `useCodeHighlighter`
-  → **宿主给了链接能力**，“provider 缺失导致链接只能是纯文本”这条不成立；
-- 表格本身能渲染（`div.md-table-scroll > table`），行内代码 chip 正常；
-- 面板**没有任何**对宿主 markdown 的样式覆盖（只剩那条 `svg` inline 规则）。
-
-**可疑方向（下一步从这里入手）**：
-
-1. **混合单元格的图标/链接节点是否真的生成**：临时加一个诊断（代码见下），把某个 `td` 的 `innerHTML`
-   打出来 —— 里面是 `<button class="_fileLink_…">`，还是纯文本？这决定是“宿主没生成元素”还是“生成了但没样式”。
-2. 如果是纯文本：怀疑宿主的表格单元格渲染路径（`X3` → `qt(cell.children, ctx)`）在遇到
-   `[text, link, text]` 混合 children 时丢掉了 link 节点；也可能与 `md-table-wide`（≥4 列）分支有关。
-3. 如果是 `<button>` 但没颜色：宿主 CSS 对 `._fileLink_…` 的颜色选择器可能带父级限定（例如只在会话容器内
-   生效），需要针对该元素加一条**结构性**规则（`.sm-preview-body button { color: … }` 或经 `style.setProperty`
-   写行内色），不要写 hash 类名。
-
-**诊断代码骨架（临时用，用完删）**：
-
-```js
-// host: lib/index.js，在 POST 分支里
-if (suffix === '/client-report') {
-  const body = await readJsonBody(req, 8192)
-  await mkdir(pluginDataRoot(), { recursive: true })
-  await writeFile(join(pluginDataRoot(), 'client-report.json'), JSON.stringify(body, null, 2), 'utf8')
-  sendJson(res, 200, { ok: true })
-  return
-}
-
-// client: 弹框渲染后（FileDialog 内）
-const body = bodyRef.current
-const table = body.querySelector('table')
-reportToHost({
-  path: preview.path,
-  cellButtons: table.querySelectorAll('td button').length,
-  cellAnchors: table.querySelectorAll('td a').length,
-  cells: Array.from(table.querySelectorAll('td')).slice(0, 4).map((td) => td.innerHTML.slice(0, 260)),
-})
-```
-
-报告落在 `%USERPROFILE%\.dsh\storages\@montersy123\dsh-skill-market\data\client-report.json`。
-
-**注意**：曾尝试“面板自己渲染 markdown”来绕开这个问题，被用户否掉了（改动面太大）；也尝试过隐藏链接里的
-类型图标、强制链接颜色，用户不希望面板自作主张改宿主的呈现。所以这条只应在**确认原因**后再做最小修复。
-
-## 7. 常用命令
+## 6. 常用命令
 
 ```powershell
 # 前置：把 PATH 指向可用的 node
@@ -186,19 +133,17 @@ gh release create vX.Y.Z --title "vX.Y.Z" --notes-file <notes.md>
 #    发布后 npm 会显示 “being processed”，约 1 分钟后才能查到
 ```
 
-## 8. 下次开会话时的开场建议
+## 7. 下次开会话时的开场建议
 
 把这段直接贴给新会话：
 
-> 继续 `D:\DshProjects\dsh-skill-market`（v2.0.5 已发布）。先读 `docs/handover.md`。
-> 现在只剩一个问题：表格单元格里「链接 + 纯文本」混合时链接不渲染；宿主 `MarkdownDelegateProvider`
-> 是存在的，面板也没有覆盖宿主样式。下一步是加临时诊断确认那个 `td` 的 `innerHTML` 里到底有没有
-> `<button>`。环境注意：PATH 里的 node 是 v16 不能用，要用 nvm 的 v26；客户端改完要刷新页面；
+> 继续 `D:\DshProjects\dsh-skill-market`（v2.0.6 已发布；`main` 比 npm 多一个未发布的客户端守卫 `5847ffe`）。
+> 先读 `docs/handover.md`。环境注意：PATH 里的 node 是 v16 不能用，要用 nvm 的 v26；客户端改完要刷新页面；
 > 排查版本用 `GET /skill-market/api/build`。
 
-## 9. 其它备忘
+## 8. 其它备忘
 
-- 发布过的版本：`2.0.1` … `2.0.5`；每次发布都只动 `package.json` + `CHANGELOG.md` 的 release 提交。
+- 发布过的版本：`2.0.1` … `2.0.6`；每次发布都只动 `package.json` + `CHANGELOG.md` 的 release 提交。
 - `files` 白名单：`lib` / `locale` / `assets` / `icon.svg` / `cordis.patch.yml` / `screenshots.json` /
   `README*.md` / `THIRD-PARTY-NOTICES.md` —— `docs/` 与 `scripts/` **不会**进包，本文件也不会。
 - 上游市场：dshmarket 的目录里已提交过本插件的 PR（#6632，仍在排队），与代码问题无关。
