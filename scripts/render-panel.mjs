@@ -1288,22 +1288,22 @@ if (argv.includes('--interactions')) {
   const savedStore = structuredClone(panelState.store.state)
   interactions.savedStoreHasRecords = savedStore?.savedSkills !== undefined
     && Object.keys(savedStore.savedSkills).length > 0
-  // Select a different order before reloading, so "it comes back as downloads" is a real assertion
+  // Select a different order before reloading, so "it comes back as the default" is a real assertion
   // rather than one that would hold because nothing ever changed. Done from 发现, where the control is:
   // the panel was left on 已安装, so the select would not be in the document at all otherwise.
   await openTab('发现')
   // Every catalogue request made so far, which is the *opening* order. Checked against what the panel
   // actually asked upstream for, not only against the control's value. The change below deliberately
-  // makes a later request `score`, so this must be read before it.
+  // makes a later request `downloads`, so this must be read before it.
   interactions.openingSortRequests = requests
     .filter((entry) => entry.target.includes('/skills?'))
     .map((entry) => new URL(entry.target, 'http://stub').searchParams.get('sortBy'))
-  interactions.everyOpeningRequestSortedByDownloads = interactions.openingSortRequests.length > 0
-    && interactions.openingSortRequests.every((value) => value === 'downloads')
+  interactions.everyOpeningRequestSortedByDefault = interactions.openingSortRequests.length > 0
+    && interactions.openingSortRequests.every((value) => value === 'score')
   const sortSelect = host.querySelector('.sm-select-wrap select')
   if (sortSelect !== null) {
     await act(async () => {
-      sortSelect.value = 'score'
+      sortSelect.value = 'downloads'
       sortSelect.dispatchEvent(new window.Event('change', { bubbles: true }))
       await settle()
     })
@@ -1325,16 +1325,16 @@ if (argv.includes('--interactions')) {
   // And in the default order, even though the store was written while a different order was selected.
   interactions.sortAfterReload = host.querySelector('.sm-select-wrap select')?.value ?? null
   interactions.savedStoreSort = panelState.store.state?.sortBy ?? null
-  interactions.sortAfterReloadIsDownloads = interactions.sortAfterReload === 'downloads'
+  interactions.sortAfterReloadIsDefault = interactions.sortAfterReload === 'score'
 
   // The opening state belongs here, after the remount: the panel opens on 发现 only now, and the select
   // was genuinely absent before — the previous mount had been left on 已安装.
   interactions.openingSort = host.querySelector('.sm-select-wrap select')?.value ?? null
-  interactions.openingSortIsDownloads = interactions.openingSort === 'downloads'
+  interactions.openingSortIsDefault = interactions.openingSort === 'score'
   interactions.openingSortOptionLabels = Array.from(host.querySelectorAll('.sm-select-wrap option'))
     .map((option) => option.textContent)
-  interactions.openingSortFirstOptionIsDownloads = interactions.openingSortOptionLabels[0] === '按下载量'
-  interactions.openingSubtitleMentionsDownloads = /按下载量排序/.test(
+  interactions.openingSortFirstOptionIsDefault = interactions.openingSortOptionLabels[0] === '按综合评分'
+  interactions.openingSubtitleMentionsDefault = /按综合评分排序/.test(
     host.querySelector('.sm-page-sub')?.textContent ?? '',
   )
 
@@ -1344,11 +1344,11 @@ if (argv.includes('--interactions')) {
   interactions.openingSort = host.querySelector('.sm-select-wrap select')?.value ?? null
   interactions.openingSortOptionLabels = Array.from(host.querySelectorAll('.sm-select-wrap option'))
     .map((option) => option.textContent)
-  interactions.openingSortFirstOptionIsDownloads = interactions.openingSortOptionLabels[0] === '按下载量'
-  interactions.openingSubtitleMentionsDownloads = /按下载量排序/.test(
+  interactions.openingSortFirstOptionIsDefault = interactions.openingSortOptionLabels[0] === '按综合评分'
+  interactions.openingSubtitleMentionsDefault = /按综合评分排序/.test(
     host.querySelector('.sm-page-sub')?.textContent ?? '',
   )
-  interactions.openingSortIsDownloads = interactions.openingSort === 'downloads'
+  interactions.openingSortIsDefault = interactions.openingSort === 'score'
   interactions.openSavedAfterReload = await openTab('收藏')
   interactions.savedRowsAfterReload = host.querySelectorAll('.sm-list-row').length
   interactions.savedRowNameAfterReload = host.querySelector('.sm-list-row h3')?.textContent ?? null

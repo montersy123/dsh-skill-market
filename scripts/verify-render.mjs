@@ -87,13 +87,13 @@ const assertions = [
   ['a local row shows no call command', () => report.interactions?.localInstalledHasCall === false],
   ['lazy loading appends the next page', () => report.interactions?.cardsAfterLoadMore > report.interactions?.cardsAfterFirstPage],
   ['the load-more control disappears at the end', () => report.interactions?.loadMoreGoneAtEnd === true],
-  ['the catalogue opens sorted by downloads', () => report.interactions?.openingSortFirstOptionIsDownloads === true],
-  ['every opening request asked for downloads', () => report.interactions?.everyOpeningRequestSortedByDownloads === true],
+  ['the catalogue opens sorted by score', () => report.interactions?.openingSortFirstOptionIsDefault === true],
+  ['every opening request asked for score', () => report.interactions?.everyOpeningRequestSortedByDefault === true],
   ['the view is not restored from storage', () => report.interactions?.viewAfterReload === '发现'],
   ['the saved list survives a reload', () => report.interactions?.savedRowsAfterReload === 1],
   ['the installed lookup folds `_` against `-`', () => report.interactions?.installedLookupFoldsUnderscore === true],
   ['reconciliation trusts the Host identity, not the directory name', () => report.interactions?.reconciliationUsesHostIdentity === true],
-  ['the sort control renders translated labels', () => (report.interactions?.openingSortOptionLabels ?? [])[0] === '按下载量'],
+  ['the sort control renders translated labels', () => (report.interactions?.openingSortOptionLabels ?? [])[0] === '按综合评分'],
   // Reading a file happens in a dialog over the panel, not inside the 560px drawer: that is the whole
   // point of the change. The widths are read from the stylesheet because jsdom has no layout to measure.
   ['reading a file opens a dialog wider than the drawer', () => report.interactions?.previewDeclared?.dialogPx > report.interactions?.previewDeclared?.drawerPx],

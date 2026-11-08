@@ -49,6 +49,7 @@ const CHECKS = [
   ['node', ['scripts/build-fingerprint-check.mjs']],
   // Behaviour, over a real HTTP server or a rendered panel.
   ['node', ['scripts/route-check.mjs']],
+  ['node', ['scripts/prefs-check.mjs']],
   ['node', ['scripts/state-root-check.mjs']],
   ['node', ['scripts/offline-check.mjs']],
   ['node', ['scripts/import-check.mjs']],

@@ -28,13 +28,15 @@ export const KEY_SHAPE = /^[a-z][a-zA-Z0-9]*(?:\.[a-z][a-zA-Z0-9]*)+$/
 /**
  * Key-shaped literals in the code that are deliberately **not** dictionary entries.
  *
- * Every entry needs a reason, because an unexplained one is how a real gap hides. `sidebar.panellist` is
- * the only one that had to be named: it is a slot id, and the strict shape rule cannot tell it apart from a
- * key. That is an accepted cost of the rule — one named exception is auditable, whereas a rule loose enough
- * to distinguish slot ids from keys is a rule that started returning wrong answers.
+ * Every entry needs a reason, because an unexplained one is how a real gap hides. Slot ids are the ones
+ * that have to be named: `sidebar.panellist` and `settings.section` are both passed to `ctx.slots.inject`
+ * and never to the translator, and the strict shape rule cannot tell them apart from a key. That is an
+ * accepted cost of the rule — named exceptions are auditable, whereas a rule loose enough to distinguish
+ * slot ids from keys is a rule that started returning wrong answers.
  */
 export const NOT_KEYS = new Set([
   'sidebar.panellist',   // a slot id, passed to `ctx.slots.inject`, never to the translator
+  'settings.section',    // the same: this plugin's page in the settings dialog, not copy
   'api.skillhub.cn',     // the upstream host shown in the status bar
 ])
 

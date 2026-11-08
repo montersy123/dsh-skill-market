@@ -56,8 +56,9 @@ const missing = [...real].filter((key) => ZH[key] === undefined || EN[key] === u
 expect(missing.length === 0, `every referenced key is defined (${String(real.size)} checked, ${String(missing.length)} missing${missing.length > 0 ? `: ${missing.slice(0, 8).join(', ')}` : ''})`)
 
 // The exclusions must be justified, or an unexplained one could hide a real gap.
-expect([...NOT_KEYS].every((value) => value === 'sidebar.panellist' || value === 'api.skillhub.cn'),
-  'the exclusion list holds only the two documented entries')
+const justified = new Set(['sidebar.panellist', 'settings.section', 'api.skillhub.cn'])
+expect([...NOT_KEYS].every((value) => justified.has(value)),
+  'the exclusion list holds only the three documented entries')
 
 expect(codeOnly(readFileSync('lib/client.js', 'utf8')).includes('const ZH = {') === false,
   'the generated dictionary block is removed before scanning')
