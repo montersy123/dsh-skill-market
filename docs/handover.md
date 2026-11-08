@@ -1,4 +1,4 @@
-# 交接文档（2026-10-19）
+# 交接文档（2026-11-08）
 
 给下一次对话用的状态快照：现在在哪、已经做了什么、还剩什么问题、怎么继续。
 
@@ -6,19 +6,19 @@
 
 ## 1. 一句话现状
 
-- 仓库：`D:\DshProjects\dsh-skill-market`，分支 `main`，最新提交 `5847ffe`
-  （`fix: never adopt an empty answer over a document this page already holds`）。
-- 已发布：`@montersy123/dsh-skill-market@2.0.6`（npm `latest`，provenance 已上传，17 files，
-  shasum `d1816e0a…`），tag `v2.0.6`，[Release](https://github.com/montersy123/dsh-skill-market/releases/tag/v2.0.6)；
-  上一版 `2.0.5` 的 CI 是 [publish #39212483636](https://github.com/montersy123/dsh-skill-market/actions/runs/39212483636)。
-- **`5847ffe` 未发布**（用户决定不单独发版）：它给客户端加了第二道防线 —— 已经知道存储版本号的页面，
-  拒绝采纳“什么都没存过”的回答，用于覆盖“客户端已新、Host 仍旧”的短暂不一致。它会随下一个版本发出；
-  `main` 与 npm 的 `latest` 因此相差一个提交，属已知状态，不必“修正”。
-- 全部检查通过：`npm test` **34/34**；渲染断言 `scripts/verify-render.mjs` **57 条**。
-- **2.0.6 修掉了数据丢失**：读不到 `panel.json` 不再被当成“空文档”（见第 10 节）。本机 profile 里的 `lib/`
-  已是最新代码（`INSTALLED COPY OK`，含未发布的 `5847ffe`），但 profile 的 `package.json` 仍写 `2.0.5`；
-  下次 `dsh plugin add @montersy123/dsh-skill-market@2.0.6` 会一并对齐（需要时先把 `2.0.6` 加进
-  `pnpm-workspace.yaml` 的 `minimumReleaseAgeExclude`，因为发布不足 24 小时）。
+- 仓库：`D:\DshProjects\dsh-skill-market`，分支 `main`，最新提交 `4cda930`
+  （`release: v2.0.7`），其后是本次进行中的改动（设置页 + 侧边栏开关，尚未提交）。
+- 已发布：`@montersy123/dsh-skill-market@2.0.7`（npm `latest`，provenance 已上传），tag `v2.0.7`，
+  [Release](https://github.com/montersy123/dsh-skill-market/releases/tag/v2.0.7)；
+  CI 是 [publish #39547680486](https://github.com/montersy123/dsh-skill-market/actions/runs/39547680486)。
+- 2.0.7 收了两条：预览弹框标题栏的基线对齐（`71ab61c`），以及 2.0.6 之前一直挂在 `main` 上没发布的
+  客户端守卫 `5847ffe`（页面已握有文档时拒绝采纳“什么都没存过”的答复）。
+- **未发布的进行中功能**：本插件自己的设置页（DSH 设置 → 技能市场），里面一行开关控制侧边栏入口是否显示。
+  代码与检查都已落地，`npm test` **35/35**（新增 `scripts/prefs-check.mjs`）；
+  剩下最后一步是**重启 App** 让 Host 的 `/prefs` 路由生效，然后在真实界面里点一次开关做端到端确认。
+- **2.0.6 修掉了数据丢失**：读不到 `panel.json` 不再被当成“空文档”（见第 10 节）。本机 profile 的
+  `package.json` 仍写 `2.0.6`（`lib/` 已是最新代码，`INSTALLED COPY OK`）；要完全对齐需
+  `dsh plugin --profile desktop add @montersy123/dsh-skill-market@2.0.7`。
 
 ## 10. 数据丢失事故（2026-10-19，务必读）
 
@@ -47,7 +47,7 @@
 |---|---|
 | 仓库 | `D:\DshProjects\dsh-skill-market` |
 | 插件安装位置 | `%USERPROFILE%\.dsh\profiles\desktop\node_modules\@montersy123\dsh-skill-market` |
-| 数据目录 | `%USERPROFILE%\.dsh\storages\@montersy123\dsh-skill-market\data`（`panel.json` / `installed.json` / `skills/`） |
+| 数据目录 | `%USERPROFILE%\.dsh\storages\@montersy123\dsh-skill-market\data`（`panel.json` / `panel.json.bak` / `prefs.json` / `installed.json` / `skills/`） |
 | PATH 里的 node | **v16.13.1，不能用** |
 | 可用的 node | `C:\Users\zyh33\AppData\Local\Author Software\nvm\installs\v26.9.0\node.exe`；命令前加 `$env:PATH = 'C:\Users\zyh33\AppData\Local\Author Software\nvm\installs\v26.9.0;' + $env:PATH` |
 | npm | 用 `npm.cmd`（`npm.ps1` 被执行策略拦） |
@@ -111,7 +111,7 @@
 # 前置：把 PATH 指向可用的 node
 $env:PATH = 'C:\Users\zyh33\AppData\Local\Author Software\nvm\installs\v26.9.0;' + $env:PATH
 
-node scripts/run-checks.mjs          # 全量 34 项，必须全绿（CI 也会跑 publish-check）
+node scripts/run-checks.mjs          # 全量 35 项，必须全绿（CI 也会跑 publish-check）
 node scripts/verify-render.mjs       # jsdom 渲染断言（57 条）
 node scripts/build-fingerprint-check.mjs
 node scripts/inline-client-locale.mjs        # 改过 lib/locale.js 后重新生成内联块
@@ -137,15 +137,73 @@ gh release create vX.Y.Z --title "vX.Y.Z" --notes-file <notes.md>
 
 把这段直接贴给新会话：
 
-> 继续 `D:\DshProjects\dsh-skill-market`（v2.0.6 已发布；`main` 比 npm 多一个未发布的客户端守卫 `5847ffe`）。
-> 先读 `docs/handover.md`。环境注意：PATH 里的 node 是 v16 不能用，要用 nvm 的 v26；客户端改完要刷新页面；
-> 排查版本用 `GET /skill-market/api/build`。
+> 继续 `D:\DshProjects\dsh-skill-market`（v2.0.7 已发布；工作区有尚未提交的设置页改动，见第 9 节）。
+> 先读 `docs/handover.md`。环境注意：PATH 里的 node 是 v16 不能用，要用 nvm 的 v26；客户端改完要刷新页面，
+> 改 `lib/index.js` 要重启 App；排查版本用 `GET /skill-market/api/build`。
 
 ## 8. 其它备忘
 
-- 发布过的版本：`2.0.1` … `2.0.6`；每次发布都只动 `package.json` + `CHANGELOG.md` 的 release 提交。
+- 发布过的版本：`2.0.1` … `2.0.7`；每次发布都只动 `package.json` + `CHANGELOG.md` 的 release 提交。
 - `files` 白名单：`lib` / `locale` / `assets` / `icon.svg` / `cordis.patch.yml` / `screenshots.json` /
   `README*.md` / `THIRD-PARTY-NOTICES.md` —— `docs/` 与 `scripts/` **不会**进包，本文件也不会。
 - 上游市场：dshmarket 的目录里已提交过本插件的 PR（#6632，仍在排队），与代码问题无关。
 - 面板侧 `BUILD` / host 侧 `HOST_BUILD` 两个常量只是构建标记（当前都是 `b21`），用于 `/build` 判断版本；
   改代码时不必同步升级，除非需要区分构建。
+
+## 9. 设置页与侧边栏开关（进行中，未发布）
+
+**需求**（用户原话，两条）：
+1. 「在设置页面加一个入口并允许设置在这个入口位置是否显示」；
+2. 「我需要在设置页面也可以进行技能搜索和安装，意思就是之前的功能在设置页面的侧边栏打开也能用，
+   要不然我设置一个在侧边栏是否显示技能市场就没意义了」——设置页那一节必须是**完整的市场**，
+   侧边栏条目只是它的一个快捷方式。
+
+**落点**：DSH 设置弹框左侧导航多一项「技能市场」（`settings.section` 插槽，`id` = `PANEL_ID` = `skill-market`，
+`order` 30 → 落在「费用」与「插件市场」之间）。页面 = 一行开关（标题 + 说明 + `Switch`）+ 下面嵌一整个
+`SkillMarketPanel`（同一个组件，`props` 没人用、翻译走模块级 `t()`，直接 `h(SkillMarketPanel, null)` 即可）。
+面板根是 `height:100%` 的 flex 容器，所以外面必须给一个确定高度的盒子，否则它的固定 chrome 会把列表压成 0。
+
+- **Host 半**（`lib/index.js`）：`prefsFile()` = 数据目录下 `prefs.json`，默认 `{ sidebarEntry: true }`；
+  `GET /skill-market/api/prefs` 返回 `{ ok, prefs, revision }`，`POST` 走白名单合并，只接受布尔
+  `sidebarEntry`，其它字段视为 no-op（回 `revision: 0`，不重写文件）；文件坏掉读成默认值，不报错。
+  **与 `panel.json` 分开是故意的**：那份文档由浏览器半整份重写，这份由设置页逐字段改，一文件一写入者。
+- **Client 半**（`lib/client.js`）：`prefsReady()` 在 `panelStateReady()` 之后拉一次偏好；
+  `sidebar.panellist` 的注册改成一个可撤销的 `sync()` —— 偏好为 false 时**根本不注册**（不是 `display:none`，
+  否则它仍占列表里的一格），改成 true 时再注册回来；设置页挂 `settings.section`，切换是乐观更新 + 失败回滚，
+  失败时在同一行用 `role="alert"` 说「保存失败，已恢复原来的设置」。
+- **文案**：`settings.sidebar.title` / `.description` / `.error` 在 `lib/locale.js`，导航名复用 `panel.title`。
+  `description` 只说明「入口会消失」，刻意写短，别再写长句，也不要提「已安装的技能不受影响」——
+  用户明确说过那是在解释不该解释的东西，这只是一行入口开关。
+- **默认排序**：`DEFAULT_SORT = 'score'`（按综合评分），与站点默认一致；`SORTS` 里 score 排第一，
+  `discover.subtitle` 的文案也跟着改成「默认按综合评分排序」。`scripts/render-panel.mjs` 的
+  `openingSort*` / `everyOpeningRequestSortedByDefault` 与 `scripts/verify-render.mjs` 的三条断言都按 score 写。
+- **设置页里的市场版式**（`[data-skill-market-settings]` 作用域，别用 `[data-skill-market]`，那会改到侧边栏面板本身）：
+  - 盒子高度**由组件量出来**，不写死：`SkillMarketSettings` 用 `findScrollContainer()` 找到弹框的滚动容器，
+    取「视口上限 `innerHeight - top - 12`」与「`scroller.clientHeight - 偏移 - paddingBottom`」里较小的那个，
+    再减去开关行与 18px 间距，`clamp(320, …, 900)` 写进 inline style；挂 `resize` 监听重算。
+    CSS 里的 `clamp(360px, 48vh, 600px)` 只当第一帧兜底。**别回到 `getBoundingClientRect()`**：rect 含边框与 padding，
+    而且弹框 body 可能比屏幕可见部分更高，用它会让底部状态栏被裁掉 30–40px。
+  - 盒子：1px 边框 + 12px 圆角 + `overflow:hidden`；子面板要 `min-width:0`（flex 子项默认最小宽度会撑破盒子）；
+    `[data-skill-market-settings]` 用 `contain: inline-size` 让段宽只由容器决定。
+  - 页头：藏掉眉标与副标题、标题降到 19px（导航项已经写着「技能市场」）。
+  - 面板自己的顶栏（刷新 + 导入技能）在设置页里**整条隐藏**（`[data-skill-market-settings] .sm-topbar { display:none }`）：
+    用户嫌它占掉 58px、把列表挤没了；导入走下面的「本地导入」标签页，功能没丢。侧边栏那份面板不受影响。
+  - 分类 chips 保持**折行**（13 个类目在窄栏里 4 行全部可见）。曾经试过 `nowrap` + 横向滚动省 80px，
+    结果最后几个类目被右边缘切掉、用户第一眼就报了这个 bug——不要再改回去。
+    设置页里默认**收起成一行**：面板接受 `collapsibleChips`（只有设置页传 `true`），收起时给
+    `.sm-chips` 加 `is-clamped`（`max-height:30px`，chip 固定 30px，所以切掉的是整行而不是半行），
+    右侧跟一个 `sm-chips-toggle`（`aria-expanded`，文案 `chips.expand` / `chips.collapse`）。
+    侧边栏那份面板不传这个 prop，所以仍是展开的。
+  - 卡片两列：`grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr))`，配 `> * { min-width:0 }`
+    与 `.sm-card-foot { flex-wrap: wrap; row-gap: 8px }`（卡片变窄后 meta 行 nowrap 会把网格撑宽）。
+  - 实测：13 个类目完整可见、每行两张卡片、底部状态栏贴着盒子下沿（窗口最大化与还原两种尺寸都验过）。
+- **嵌进去的浮层**：抽屉/详情弹框/确认框都是 `position:absolute; inset:0`，贴在面板根上，所以只会盖住这个
+  600px 的盒子（不会盖整个窗口）。能看能用，就是小；这是当前取舍，不是 bug。
+- **检查**：`scripts/prefs-check.mjs`（路由 18 条断言，已进套件）；`scripts/dev/prefs-check.mjs` 与
+  `scripts/dev/settings-render-check.mjs` 是两个临时脚本（不入库），分别验证客户端门控与设置行的渲染/回滚。
+- **已验证**（2026-11-08 重启 App 后，在真实桌面端里点出来）：设置导航出现「技能市场」；关开关 → 侧边栏条目
+  立刻消失、`prefs.json` 写 `false`、`GET /prefs` 与之一致；再打开 → 条目回来、文件写回 `true`；设置页里搜
+  `pdf` 能得到结果、点卡片能在盒子里拉起详情抽屉（含「安装技能」）。`node scripts/run-checks.mjs` 35/35。
+- **还差**：`CHANGELOG.md` 与 `package.json` 升到 2.1.0 再发布（这批改动仍未提交，工作区里躺着）。
+- **已知取舍**：导航图标是默认齿轮（`settings.section.icon` 槽位没有内置注册者，注册它要赌槽位已声明，
+  未声明会在加载期抛错，为一个图标不值得）。
